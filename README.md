@@ -1,8 +1,8 @@
-# LoRaWAN Accredited Professional — Entrenador
+# LPWAN AP Trainer
 
-Curso y entrenador para el examen de acreditación de la LoRa Alliance. Incluye 24 lecciones
-de teoría explicada, 146 preguntas con corrección razonada (74 en el banco de tests y 72 de
-comprobación al final de las lecciones), 61 tarjetas de repaso espaciado, simulacro
+Curso y entrenador para el examen de certificación LoRaWAN Accredited Professional. Incluye 24
+lecciones de teoría explicada, 146 preguntas con corrección razonada (74 en el banco de tests y
+72 de comprobación al final de las lecciones), 61 tarjetas de repaso espaciado, simulacro
 cronometrado y calculadoras de radio (tiempo en aire, ciclo de trabajo y presupuesto de enlace).
 
 El temario cubre los ocho dominios del examen en unas tres horas y media de estudio, pensado
@@ -12,7 +12,11 @@ Funciona en el navegador, se instala como app en el móvil y sigue funcionando s
 No tiene servidor ni cuentas, no recoge ningún dato y no hace una sola petición a terceros:
 el progreso se queda en el navegador de quien estudia.
 
-**App publicada:** https://agonzaleztic-source.github.io/lorawan-ap-trainer/
+**Proyecto independiente, no afiliado ni respaldado por la LoRa Alliance.** LoRaWAN® es una
+marca registrada de la LoRa Alliance, Inc.; se menciona aquí solo como referencia factual al
+examen de certificación que cubre el temario.
+
+**App publicada:** https://agonzaleztic-source.github.io/lpwan-ap-trainer/
 
 ## Cómo entrena
 
@@ -27,7 +31,7 @@ el progreso se queda en el navegador de quien estudia.
 
 ## Instalarla en el móvil
 
-Abre https://agonzaleztic-source.github.io/lorawan-ap-trainer/ en el móvil:
+Abre https://agonzaleztic-source.github.io/lpwan-ap-trainer/ en el móvil:
 
 - **Android (Chrome)**: menú ⋮ → *Añadir a pantalla de inicio*.
 - **iOS (Safari)**: botón compartir → *Añadir a pantalla de inicio*.

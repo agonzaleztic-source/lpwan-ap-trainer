@@ -1,7 +1,7 @@
 {
-  "name": "LoRaWAN Accredited Professional — Entrenador",
-  "short_name": "LoRaWAN AP",
-  "description": "Temario, tarjetas, tests y calculadoras para el examen de la LoRa Alliance.",
+  "name": "LPWAN AP Trainer",
+  "short_name": "AP Trainer",
+  "description": "Temario, tarjetas, tests y calculadoras para el examen de certificación LoRaWAN Accredited Professional. Proyecto independiente, no afiliado a la LoRa Alliance.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

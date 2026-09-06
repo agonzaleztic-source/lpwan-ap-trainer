@@ -49,6 +49,9 @@ export const CSS = `
 
 .lw-wrap { max-width:1080px; margin:0 auto; padding:0 20px 72px; }
 
+.lw-footer { border-top:1px solid var(--line); padding:18px 20px 28px; text-align:center;
+  color:var(--muted); font-size:12px; max-width:1080px; margin:0 auto; }
+
 /* ---- hero / cabecera con espectrograma ---- */
 .lw-hero { position:relative; overflow:hidden; border-bottom:1px solid var(--line); margin-bottom:26px; }
 .lw-hero-inner { max-width:1080px; margin:0 auto; padding:38px 20px 30px; position:relative; z-index:2; }

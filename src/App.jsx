@@ -849,10 +849,10 @@ export default function App() {
       <header className="lw-hero">
         <Waterfall />
         <div className="lw-hero-inner">
-          <h1 className="lw-title">LoRaWAN<br />Accredited Professional</h1>
+          <h1 className="lw-title">LPWAN<br />AP Trainer</h1>
           <p className="lw-sub">
-            Curso completo y entrenamiento para el examen de acreditación de la LoRa Alliance: teoría explicada,
-            tarjetas, tests por dominio, simulacro cronometrado y calculadoras de radio.
+            Curso completo y entrenamiento para el examen de certificación LoRaWAN Accredited Professional: teoría
+            explicada, tarjetas, tests por dominio, simulacro cronometrado y calculadoras de radio.
           </p>
           <div className="lw-facts">
             <span className="lw-fact"><b>{LESSONS.length}</b> lecciones</span>
@@ -884,6 +884,11 @@ export default function App() {
         {tab === "calculadoras" && <Tools />}
         {tab === "referencia" && <Reference />}
       </main>
+
+      <footer className="lw-footer">
+        Proyecto independiente, no afiliado ni respaldado por la LoRa Alliance. LoRaWAN® es una
+        marca registrada de la LoRa Alliance, Inc.
+      </footer>
     </div>
   );
 }
