@@ -43,4 +43,16 @@ describe("integridad del banco de preguntas", () => {
     // para no volver a caer en el sesgo de origen (112 de 146 en el índice 1).
     for (const n of dist) expect(n).toBeGreaterThan(all.length / 4 - 15);
   });
+
+  // `ref` es opcional a propósito: solo se rellena cuando el contenido está
+  // respaldado por una sección verificada de TS001, RP002 o TS002. Este test
+  // no valida que la cita sea correcta (eso se comprobó a mano contra los PDF
+  // oficiales), solo que nadie cuele un formato o una fuente distinta sin querer.
+  it("la referencia a la especificación, cuando existe, cita un documento reconocido", () => {
+    const conRef = all.filter((q) => q.ref);
+    expect(conRef.length).toBeGreaterThan(0);
+    for (const q of conRef) {
+      expect(q.ref).toMatch(/^(TS001-1\.1|TS001|RP002|TS002)(\s§.+)?$/);
+    }
+  });
 });

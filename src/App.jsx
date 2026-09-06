@@ -101,7 +101,12 @@ function Check({ c, i, onAnswer }) {
           </button>
         );
       })}
-      {pick !== null && <div className="lw-exp" style={{ marginTop: 10 }}>{q.exp}</div>}
+      {pick !== null && (
+        <div style={{ marginTop: 10 }}>
+          <div className="lw-exp">{q.exp}</div>
+          {q.ref && <div className="lw-ref">{q.ref}</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -613,11 +618,14 @@ function Quiz({ record, failed, onAnswer, onRun }) {
           );
         })}
         {done && !mock && (
-          <div className="lw-exp" style={{ marginTop: 14 }}>
-            <b style={{ color: pick === q.a ? "var(--green)" : "var(--red)" }}>
-              {pick === q.a ? "Correcto. " : "Incorrecto. "}
-            </b>
-            {q.exp}
+          <div style={{ marginTop: 14 }}>
+            <div className="lw-exp">
+              <b style={{ color: pick === q.a ? "var(--green)" : "var(--red)" }}>
+                {pick === q.a ? "Correcto. " : "Incorrecto. "}
+              </b>
+              {q.exp}
+            </div>
+            {q.ref && <div className="lw-ref">{q.ref}</div>}
           </div>
         )}
         {done && (
@@ -660,6 +668,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
                 <div className="lw-kv"><span style={{ color: "var(--red)" }}>Tu respuesta</span><b>{f.q.opts[f.idx]}</b></div>
                 <div className="lw-kv"><span style={{ color: "var(--green)" }}>Correcta</span><b>{f.q.opts[f.q.a]}</b></div>
                 <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 12 }}>{f.q.exp}</p>
+                {f.q.ref && <div className="lw-ref">{f.q.ref}</div>}
               </div>
             ))}
           </div>

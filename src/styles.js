@@ -127,6 +127,8 @@ export const CSS = `
 .lw-opt.bad .k { color:var(--red); }
 .lw-exp { border-left:2px solid var(--amber); background:rgba(242,166,60,.07);
   padding:12px 15px; font-size:14px; border-radius:0 3px 3px 0; }
+.lw-ref { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);
+  margin-top:6px; }
 
 /* ---- tarjeta flip ---- */
 .lw-flip { perspective:1400px; }

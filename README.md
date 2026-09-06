@@ -63,7 +63,7 @@ npm run preview
 ## Comprobaciones
 
 ```bash
-npm test     # 40 pruebas: cálculos de radio, motor de repaso e integridad del banco
+npm test     # 41 pruebas: cálculos de radio, motor de repaso e integridad del banco
 npm run audit
 ```
 
@@ -139,11 +139,13 @@ En `src/data/questions.js`. El campo `a` es el índice de la opción correcta em
 
 ```js
 { id: 75, dom: "cmd", q: "¿Qué comando ajusta el retardo de RX1?",
-  opts: ["RXParamSetupReq", "RXTimingSetupReq", "DlChannelReq", "NewChannelReq"], a: 1,
+  opts: ["RXParamSetupReq", "RXTimingSetupReq", "DlChannelReq", "NewChannelReq"], a: 1, ref: "TS001 §5.7",
   exp: "RXTimingSetupReq (0x08) modifica RECEIVE_DELAY1; RECEIVE_DELAY2 se deriva sumando 1 s." },
 ```
 
-Los `dom` válidos son: `phy`, `arq`, `cls`, `sec`, `mac`, `cmd`, `reg`, `ops`.
+Los `dom` válidos son: `phy`, `arq`, `cls`, `sec`, `mac`, `cmd`, `reg`, `ops`. El campo `ref`
+es opcional: solo añádelo si has comprobado la sección contra el PDF oficial de TS001, RP002
+o TS002; si no, mejor dejarlo sin poner que citar de memoria.
 Guarda, comprueba en local con `npm run dev` y publica con un push a `main`.
 
 ## Aviso sobre el contenido
@@ -151,7 +153,15 @@ Guarda, comprueba en local con `npm run dev` y publica con un push a `main`.
 El material se ha elaborado a partir de la documentación pública de la especificación
 LoRaWAN. No procede del banco de preguntas oficial ni lo reproduce. La fuente definitiva
 para el examen son los documentos de la LoRa Alliance: TS001 (Link Layer), RP002 (Regional
-Parameters) y el resto de la Resource Library.
+Parameters), TS002 (Backend Interfaces) y el resto de la Resource Library.
+
+Unas 113 de las 146 preguntas llevan además un campo `ref` (p. ej. `TS001 §4.4`, `RP002
+§2.4.3`) con la sección exacta de esas tres especificaciones que respalda la respuesta,
+verificado contra el texto de los PDF oficiales, no de memoria. Las ~33 restantes —
+electrónica de radio (fórmula de tiempo en aire, sensibilidad del receptor), buenas
+prácticas de despliegue o especificaciones fuera de esas tres (FUOTA, certificación,
+relay)— se quedan sin `ref` a propósito: citar una sección que no cubre el contenido sería
+peor que no citar nada.
 
 ## Desplegar tu propia copia
 
