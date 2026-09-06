@@ -63,14 +63,15 @@ npm run preview
 ## Comprobaciones
 
 ```bash
-npm test     # 32 pruebas sobre los cálculos de radio y el motor de repaso
+npm test     # 40 pruebas: cálculos de radio, motor de repaso e integridad del banco
 npm run audit
 ```
 
 Las pruebas cubren lo que no se puede verificar a ojo: los tiempos en aire
 contra los valores de referencia de Semtech (SF7/125 kHz/13 B = 46,3 ms;
 SF12 = 1,155 s), el reparto uniforme de la respuesta correcta entre las cuatro
-posiciones, la progresión de cajas de Leitner y el saneado de lo que vuelve de
+posiciones al barajar, que ningún enunciado se repita en el banco, la
+progresión de cajas de Leitner y el saneado de lo que vuelve de
 `localStorage`. Se ejecutan, junto con la auditoría de dependencias, en cada
 push a `main` antes de publicar.
 
