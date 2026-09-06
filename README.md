@@ -1,7 +1,7 @@
 # LPWAN AP Trainer
 
 Curso y entrenador para el examen de certificación LoRaWAN Accredited Professional. Incluye 24
-lecciones de teoría explicada, 146 preguntas con corrección razonada (74 en el banco de tests y
+lecciones de teoría explicada, 273 preguntas con corrección razonada (201 en el banco de tests y
 72 de comprobación al final de las lecciones), 61 tarjetas de repaso espaciado, simulacro
 cronometrado y calculadoras de radio (tiempo en aire, ciclo de trabajo y presupuesto de enlace).
 
@@ -155,9 +155,9 @@ LoRaWAN. No procede del banco de preguntas oficial ni lo reproduce. La fuente de
 para el examen son los documentos de la LoRa Alliance: TS001 (Link Layer), RP002 (Regional
 Parameters), TS002 (Backend Interfaces) y el resto de la Resource Library.
 
-Unas 113 de las 146 preguntas llevan además un campo `ref` (p. ej. `TS001 §4.4`, `RP002
+Unas 232 de las 273 preguntas llevan además un campo `ref` (p. ej. `TS001 §4.4`, `RP002
 §2.4.3`) con la sección exacta de esas tres especificaciones que respalda la respuesta,
-verificado contra el texto de los PDF oficiales, no de memoria. Las ~33 restantes —
+verificado contra el texto de los PDF oficiales, no de memoria. Las ~41 restantes —
 electrónica de radio (fórmula de tiempo en aire, sensibilidad del receptor), buenas
 prácticas de despliegue o especificaciones fuera de esas tres (FUOTA, certificación,
 relay)— se quedan sin `ref` a propósito: citar una sección que no cubre el contenido sería

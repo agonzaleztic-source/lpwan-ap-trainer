@@ -467,6 +467,8 @@ function Flashcards({ cards, onGrade }) {
 /* ============================================================
    TEST
    ============================================================ */
+const MOCK_LEN = 100; // el examen real: 100 preguntas en 90 minutos
+
 function Quiz({ record, failed, onAnswer, onRun }) {
   const [phase, setPhase] = useState("setup");
   const [doms, setDoms] = useState(DOMAINS.map((d) => d.id));
@@ -499,13 +501,14 @@ function Quiz({ record, failed, onAnswer, onRun }) {
     setDoms((d) => (d.includes(id) ? (d.length > 1 ? d.filter((x) => x !== id) : d) : [...d, id]));
 
   /* Selección de preguntas.
-     - "mock": el banco entero, contrarreloj.
+     - "mock": simulacro del examen real (100 preguntas, 90 min), tomadas al
+       azar del banco entero. Si el banco tiene menos de 100, se usa entero.
      - "fails": solo las que quedaron pendientes de acertar.
      - "custom": la selección del alumno, dando prioridad a sus fallos y
        rellenando con el resto. Reordenado al final para que los fallos no
        salgan todos seguidos al principio. */
   const buildSet = (mode) => {
-    if (mode === "mock") return shuffle(QUESTIONS, randSeed());
+    if (mode === "mock") return shuffle(QUESTIONS, randSeed()).slice(0, MOCK_LEN);
     if (mode === "fails") return shuffle(QUESTIONS.filter((q) => failed[q.id]), randSeed());
     const sel = QUESTIONS.filter((q) => doms.includes(q.dom));
     const bad = shuffle(sel.filter((q) => failed[q.id]), randSeed());
@@ -585,8 +588,8 @@ function Quiz({ record, failed, onAnswer, onRun }) {
         <div className="lw-card">
           <h3 style={{ fontSize: 15, marginBottom: 8 }}>Simulacro cronometrado</h3>
           <p className="lw-note" style={{ marginBottom: 14, maxWidth: "62ch" }}>
-            Las {QUESTIONS.length} preguntas del banco al ritmo del examen oficial: 54 segundos por pregunta,
-            sin explicaciones hasta el final.
+            {Math.min(MOCK_LEN, QUESTIONS.length)} preguntas al azar de las {QUESTIONS.length} del banco,
+            con el formato del examen real: 90 minutos, sin explicaciones hasta el final.
           </p>
           <button className="lw-btn" onClick={() => start("mock")}>Lanzar simulacro</button>
         </div>
