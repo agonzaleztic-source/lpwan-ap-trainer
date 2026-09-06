@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  emptyState, loadState, saveState, clearState,
+  emptyState, loadState, saveState, clearState, exportState, importState,
   cardState, isDue, scheduleCard, deckStatus, recordAnswer, BOXES,
 } from "./store.js";
 
@@ -109,6 +109,29 @@ describe("escritura del almacen", () => {
     localStorage.fallar = true;
     expect(saveState(emptyState(DOMS))).toBe(false);
     expect(clearState()).toBe(false);
+  });
+});
+
+describe("exportar e importar progreso", () => {
+  it("lo que exporta se puede volver a importar sin perder nada", () => {
+    const s = { ...emptyState(DOMS), studied: ["phy1"], failed: { 3: 1 }, cards: { f: { box: 2, due: 10 } } };
+    expect(importState(DOMS, exportState(s))).toEqual(s);
+  });
+
+  it("aplica el mismo saneado que loadState a un fichero con basura", () => {
+    const texto = JSON.stringify({ v: 1, studied: ["phy1", 42], cards: { __proto__: { box: 5, due: 0 } } });
+    const s = importState(DOMS, texto);
+    expect(s.studied).toEqual(["phy1"]);
+    expect(Object.getPrototypeOf(s.cards)).toBe(Object.prototype);
+  });
+
+  it("no acepta un fichero que no es JSON", () => {
+    expect(importState(DOMS, "esto no es json")).toBeNull();
+  });
+
+  it("no acepta un fichero de otra version ni de otra app", () => {
+    expect(importState(DOMS, JSON.stringify({ v: 2, studied: ["x"] }))).toBeNull();
+    expect(importState(DOMS, JSON.stringify({ otraCosa: true }))).toBeNull();
   });
 });
 

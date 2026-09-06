@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { CSS } from "./styles.js";
 import { DOMAINS, DOM_NAME, DOM_COLOR } from "./data/domains.js";
 import { QUESTIONS } from "./data/questions.js";
@@ -7,7 +7,7 @@ import { LESSONS } from "./data/lessons.js";
 import { T_DR_EU, T_MTYPE, T_CID, T_KEYS, T_TIMES, T_DOCS } from "./data/tables.js";
 import { timeOnAir, SENS, fmt, shuffle, shuffleOptions, randSeed } from "./lib/radio.js";
 import {
-  emptyState, loadState, saveState, clearState,
+  emptyState, loadState, saveState, clearState, exportState, importState,
   scheduleCard, deckStatus, cardState, humanDelay, recordAnswer,
 } from "./lib/store.js";
 
@@ -208,8 +208,20 @@ const PLAN = [
     x: "Lecciones de operación, más simulacros completos hasta sostener el 85 % de acierto. Las tarjetas son para los huecos que salgan." },
 ];
 
-function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, go }) {
+function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onExport, onImport, go }) {
   const [confirmReset, setConfirmReset] = useState(false);
+  const [importMsg, setImportMsg] = useState(null); // null | "ok" | "error"
+  const fileRef = useRef(null);
+
+  function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite volver a elegir el mismo fichero más tarde
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setImportMsg(onImport(String(reader.result)) ? "ok" : "error");
+    reader.onerror = () => setImportMsg("error");
+    reader.readAsText(file);
+  }
   const total = Object.values(stats).reduce((s, v) => s + v.seen, 0);
   const right = Object.values(stats).reduce((s, v) => s + v.right, 0);
   const pct = total ? Math.round((right / total) * 100) : 0;
@@ -333,6 +345,18 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, go 
           ? " Tu progreso se guarda en este dispositivo y sobrevive a cerrar la app."
           : " Este navegador no permite guardar datos, así que el progreso se perderá al cerrar la pestaña."}
       </p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <button className="lw-btn ghost" onClick={onExport}>Exportar mi progreso</button>
+        <button className="lw-btn ghost" onClick={() => fileRef.current?.click()}>Importar progreso</button>
+        <input ref={fileRef} type="file" accept="application/json,.json" onChange={handleFile} hidden />
+        {importMsg === "ok" && <span className="lw-note" style={{ color: "var(--green)" }}>Progreso importado.</span>}
+        {importMsg === "error" && (
+          <span className="lw-note" style={{ color: "var(--amber)" }}>
+            El fichero no tiene el formato esperado; no se ha tocado tu progreso.
+          </span>
+        )}
+      </div>
+
       {confirmReset ? (
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <span className="lw-note">Se borrará todo: lecciones, aciertos, tarjetas y fallos pendientes.</span>
@@ -842,6 +866,25 @@ export default function App() {
     setState(emptyState(DOM_IDS));
   }, []);
 
+  const doExport = useCallback(() => {
+    const blob = new Blob([exportState(state)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `progreso-ap-trainer-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [state]);
+
+  /* El mismo saneado campo a campo que loadState(): un fichero importado es
+     entrada tan poco fiable como lo que ya hubiera en localStorage. */
+  const doImport = useCallback((text) => {
+    const next = importState(DOM_IDS, text);
+    if (!next) return false;
+    setState(next);
+    return true;
+  }, []);
+
   return (
     <div className="lw">
       <style>{CSS}</style>
@@ -876,7 +919,7 @@ export default function App() {
       <main className="lw-wrap" style={{ paddingTop: 28 }}>
         {tab === "panel" && (
           <Dashboard stats={stats} studied={studied} cards={cards} failed={failed}
-            runs={runs} persists={persists} onReset={reset} go={setTab} />
+            runs={runs} persists={persists} onReset={reset} onExport={doExport} onImport={doImport} go={setTab} />
         )}
         {tab === "teoria" && <Theory studied={studied} markStudied={markStudied} record={record} />}
         {tab === "tarjetas" && <Flashcards cards={cards} onGrade={gradeCard} />}

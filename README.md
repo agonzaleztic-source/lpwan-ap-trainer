@@ -28,6 +28,9 @@ examen de certificación que cubre el temario.
   en volver, lo que fallas reaparece en la misma sesión.
 - **Los fallos se reinyectan.** Una pregunta fallada entra primero en los siguientes tests y
   solo sale de la lista cuando la aciertas más tarde.
+- **El progreso se puede exportar e importar.** Desde el panel, un botón descarga un JSON con
+  todo el estado y otro lo restaura en cualquier dispositivo, validado con el mismo saneado
+  que protege lo que vuelve de `localStorage`.
 
 ## Instalarla en el móvil
 

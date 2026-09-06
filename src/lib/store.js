@@ -96,26 +96,52 @@ function cleanRuns(saved) {
     }));
 }
 
+/* Reconstruye un estado válido campo a campo a partir de cualquier objeto,
+   tanto si viene de localStorage como de un fichero importado a mano: ambos
+   son entrada no confiable con la misma forma esperada. Devuelve null si
+   `saved` no tiene pinta de ser un estado de esta app. */
+function sanitizeState(doms, saved) {
+  if (!isPlain(saved) || saved.v !== 1) return null;
+  const base = emptyState(doms);
+  return {
+    v: 1,
+    // Si el temario gana dominios nuevos, los que falten arrancan a cero.
+    stats: cleanStats(base.stats, saved.stats),
+    studied: Array.isArray(saved.studied)
+      ? saved.studied.filter((x) => typeof x === "string")
+      : [],
+    cards: cleanCards(saved.cards),
+    failed: cleanFailed(saved.failed),
+    runs: cleanRuns(saved.runs),
+  };
+}
+
 export function loadState(doms) {
   const base = emptyState(doms);
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return base;
-    const saved = JSON.parse(raw);
-    if (!isPlain(saved) || saved.v !== 1) return base;
-    return {
-      v: 1,
-      // Si el temario gana dominios nuevos, los que falten arrancan a cero.
-      stats: cleanStats(base.stats, saved.stats),
-      studied: Array.isArray(saved.studied)
-        ? saved.studied.filter((x) => typeof x === "string")
-        : [],
-      cards: cleanCards(saved.cards),
-      failed: cleanFailed(saved.failed),
-      runs: cleanRuns(saved.runs),
-    };
+    return sanitizeState(doms, JSON.parse(raw)) ?? base;
   } catch {
     return base;
+  }
+}
+
+/* Progreso listo para volcar a un fichero .json descargable. */
+export function exportState(state) {
+  return JSON.stringify(state, null, 2);
+}
+
+/* Progreso que vuelve de un fichero elegido por quien estudia: mismo
+   saneado que localStorage, porque el fichero se pudo editar a mano o venir
+   de otra versión de la app. Devuelve null si el texto no es un estado
+   válido, para que quien llama pueda avisar en vez de machacar el progreso
+   actual con algo roto. */
+export function importState(doms, text) {
+  try {
+    return sanitizeState(doms, JSON.parse(text));
+  } catch {
+    return null;
   }
 }
 
