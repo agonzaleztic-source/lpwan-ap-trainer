@@ -71,7 +71,13 @@ export const CSS = `
 /* ---- navegación ---- */
 .lw-nav { position:sticky; top:0; z-index:20; background:rgba(10,20,32,.93);
   backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
-.lw-nav-in { max-width:1080px; margin:0 auto; padding:0 12px; display:flex; gap:2px; overflow-x:auto; }
+.lw-nav-in { max-width:1080px; margin:0 auto; padding:0 12px; display:flex; gap:2px; align-items:stretch; overflow-x:auto; }
+.lw-lang { margin-left:auto; display:flex; align-items:center; gap:2px; padding-left:10px; }
+.lw-lang-btn { appearance:none; background:none; border:1px solid transparent; border-radius:3px;
+  color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.04em;
+  padding:5px 8px; cursor:pointer; transition:color .12s, border-color .12s; }
+.lw-lang-btn:hover { color:var(--ink); }
+.lw-lang-btn[aria-pressed="true"] { color:var(--cyan); border-color:var(--line); }
 .lw-nav-in::-webkit-scrollbar { height:0; }
 .lw-tab { appearance:none; background:none; border:0; border-bottom:2px solid transparent;
   color:var(--muted); font:inherit; font-size:14px; padding:13px 14px; cursor:pointer;

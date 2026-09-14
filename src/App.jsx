@@ -1,15 +1,17 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { CSS } from "./styles.js";
-import { DOMAINS, DOM_NAME, DOM_COLOR } from "./data/domains.js";
+import { DOMAINS, DOM_COLOR } from "./data/domains.js";
 import { QUESTIONS } from "./data/questions.js";
 import { CARDS } from "./data/cards.js";
 import { LESSONS } from "./data/lessons.js";
-import { T_DR_EU, T_MTYPE, T_CID, T_KEYS, T_TIMES, T_DOCS } from "./data/tables.js";
 import { timeOnAir, SENS, fmt, shuffle, shuffleOptions, randSeed } from "./lib/radio.js";
 import {
   emptyState, loadState, saveState, clearState, exportState, importState,
-  scheduleCard, deckStatus, cardState, humanDelay, recordAnswer,
+  scheduleCard, deckStatus, cardState, humanDelay, recordAnswer, BOXES,
 } from "./lib/store.js";
+import { LangProvider, useLang } from "./i18n/lang.jsx";
+import { LANGS } from "./i18n/strings.js";
+import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, tables } from "./i18n/content.js";
 
 /* ============================================================
    PIEZAS REUTILIZABLES
@@ -58,10 +60,11 @@ function Field({ label, children }) {
 
 /* Renderiza un bloque del cuerpo de una lección. */
 function Block({ b }) {
+  const { t } = useLang();
   switch (b.t) {
     case "h": return <h4>{b.x}</h4>;
-    case "key": return <div className="lw-box key"><b>Idea clave</b>{b.x}</div>;
-    case "warn": return <div className="lw-box warn"><b>Ojo en el examen</b>{b.x}</div>;
+    case "key": return <div className="lw-box key"><b>{t.block.key}</b>{b.x}</div>;
+    case "warn": return <div className="lw-box warn"><b>{t.block.warn}</b>{b.x}</div>;
     case "list": return <ul>{b.x.map((i, k) => <li key={k}>{i}</li>)}</ul>;
     case "num": return <ol>{b.x.map((i, k) => <li key={k}>{i}</li>)}</ol>;
     case "table": return <Table head={b.head} rows={b.rows} />;
@@ -77,7 +80,8 @@ function Block({ b }) {
 
 /* Preguntas de comprobación al final de cada lección.
    Las opciones se barajan una vez por montaje: al reabrir la lección el
-   orden cambia, así que no se puede memorizar la posición de la correcta. */
+   orden cambia, así que no se puede memorizar la posición de la correcta.
+   `c` llega ya en el idioma de la interfaz. */
 function Check({ c, i, onAnswer }) {
   const [pick, setPick] = useState(null);
   const [seed] = useState(randSeed);
@@ -115,6 +119,7 @@ function Check({ c, i, onAnswer }) {
    TEORÍA
    ============================================================ */
 function Theory({ studied, markStudied, record }) {
+  const { lang, t } = useLang();
   const [openId, setOpenId] = useState(null);
   const lesson = LESSONS.find((l) => l.id === openId);
 
@@ -127,33 +132,39 @@ function Theory({ studied, markStudied, record }) {
     return (
       <div>
         <button className="lw-btn ghost" style={{ marginBottom: 22 }} onClick={() => setOpenId(null)}>
-          Volver al temario
+          {t.theory.back}
         </button>
         <span className="mono" style={{ fontSize: 12, color: DOM_COLOR[lesson.dom] }}>
-          {DOM_NAME[lesson.dom]} · {lesson.mins} min
+          {t.dom[lesson.dom]} · {t.theory.mins(lesson.mins)}
         </span>
-        <h2 style={{ fontSize: 28, lineHeight: 1.2, margin: "10px 0 26px", maxWidth: "22ch" }}>{lesson.title}</h2>
+        <h2 style={{ fontSize: 28, lineHeight: 1.2, margin: "10px 0 26px", maxWidth: "22ch" }}>{lessonTitle(lesson, lang)}</h2>
 
-        <div className="lw-read">
+        {t.theory.spanishOnly && (
+          <p className="lw-note" style={{ marginBottom: 22, maxWidth: "70ch" }}>{t.theory.spanishOnly}</p>
+        )}
+
+        {/* El cuerpo de las lecciones existe solo en español por ahora. */}
+        <div className="lw-read" lang="es">
           {lesson.body.map((b, k) => <Block key={k} b={b} />)}
         </div>
 
         <div className="lw-check">
-          <h3 style={{ fontSize: 17, marginBottom: 18 }}>Compruébalo</h3>
+          <h3 style={{ fontSize: 17, marginBottom: 18 }}>{t.theory.check}</h3>
           {lesson.checks.map((c, k) => (
-            <Check key={`${lesson.id}-${k}`} c={c} i={k} onAnswer={(ok) => record(lesson.dom, ok)} />
+            <Check key={`${lesson.id}-${k}-${lang}`} c={localizeCheck(lesson.id, k, c, lang)} i={k}
+              onAnswer={(ok) => record(lesson.dom, ok)} />
           ))}
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
           {!done && (
             <button className="lw-btn primary" onClick={() => markStudied(lesson.id)}>
-              Marcar como estudiada
+              {t.theory.markStudied}
             </button>
           )}
           {next && (
             <button className="lw-btn" onClick={() => { markStudied(lesson.id); setOpenId(next.id); }}>
-              Siguiente: {next.title}
+              {t.theory.next(lessonTitle(next, lang))}
             </button>
           )}
         </div>
@@ -164,17 +175,14 @@ function Theory({ studied, markStudied, record }) {
   const totalMins = LESSONS.reduce((s, l) => s + l.mins, 0);
   return (
     <div>
-      <h2 className="lw-h2">Teoría</h2>
-      <p className="lw-lead">
-        Veinticuatro lecciones que cubren la materia del examen desde cero, con las ideas clave, las trampas
-        habituales y tres preguntas de comprobación al final de cada una. Unas {Math.round(totalMins / 60)} horas
-        de lectura en total.
-      </p>
+      <h2 className="lw-h2">{t.theory.h2}</h2>
+      <p className="lw-lead">{t.theory.lead(Math.round(totalMins / 60))}</p>
+      {t.theory.spanishOnly && <p className="lw-note" style={{ marginBottom: 18, maxWidth: "70ch" }}>{t.theory.spanishOnly}</p>}
       <div className="lw-bar" style={{ marginBottom: 8 }}>
         <i style={{ width: `${(studied.length / LESSONS.length) * 100}%` }} />
       </div>
       <p className="lw-note" style={{ marginBottom: 26 }}>
-        {studied.length} de {LESSONS.length} lecciones estudiadas
+        {t.theory.progress(studied.length, LESSONS.length)}
       </p>
 
       {DOMAINS.map((d) => {
@@ -183,13 +191,13 @@ function Theory({ studied, markStudied, record }) {
         return (
           <div key={d.id} style={{ marginBottom: 28 }}>
             <h3 style={{ fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 9 }}>
-              <i className="lw-dot" style={{ background: d.c }} />{d.n}
+              <i className="lw-dot" style={{ background: d.c }} />{t.dom[d.id]}
             </h3>
             {ls.map((l) => (
               <button key={l.id} className={`lw-lesson-row${studied.includes(l.id) ? " done" : ""}`}
                 onClick={() => setOpenId(l.id)}>
-                <span className="lw-lesson-t">{l.title}</span>
-                <span className="lw-lesson-m">{l.mins} min</span>
+                <span className="lw-lesson-t">{lessonTitle(l, lang)}</span>
+                <span className="lw-lesson-m">{t.theory.mins(l.mins)}</span>
               </button>
             ))}
           </div>
@@ -202,18 +210,8 @@ function Theory({ studied, markStudied, record }) {
 /* ============================================================
    PANEL
    ============================================================ */
-const PLAN = [
-  { s: "Semana 1", t: "Fundamentos de radio y arquitectura",
-    x: "Lecciones de capa física y arquitectura. Al terminar, deberías saber calcular un tiempo en aire de memoria y explicar el recorrido completo de un uplink." },
-  { s: "Semana 2", t: "Clases, seguridad y trama",
-    x: "Las nueve lecciones de clases, activación y formato de trama. Es el bloque más denso y el que más preguntas concentra." },
-  { s: "Semana 3", t: "Comandos, ADR y regiones",
-    x: "Comandos MAC, funcionamiento real del ADR y planes regionales. Memoriza aquí las tablas de la sección de referencia." },
-  { s: "Semana 4", t: "Despliegue y repaso",
-    x: "Lecciones de operación, más simulacros completos hasta sostener el 85 % de acierto. Las tarjetas son para los huecos que salgan." },
-];
-
 function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onExport, onImport, go }) {
+  const { lang, t } = useLang();
   const [confirmReset, setConfirmReset] = useState(false);
   const [importMsg, setImportMsg] = useState(null); // null | "ok" | "error"
   const fileRef = useRef(null);
@@ -237,31 +235,31 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
      no una buena nota suelta. Se miran los tres últimos. */
   const last3 = runs.slice(-3);
   const sustained = last3.length === 3 && last3.every((r) => r.score >= 85);
-  const weak = DOMAINS.map((d) => ({ ...d, s: stats[d.id] }))
+  const weak = DOMAINS.map((d) => ({ ...d, n: t.dom[d.id], s: stats[d.id] }))
     .filter((d) => d.s.seen >= 3)
     .sort((a, b) => a.s.right / a.s.seen - b.s.right / b.s.seen)[0];
   const nextLesson = LESSONS.find((l) => !studied.includes(l.id));
 
   return (
     <div>
-      <h2 className="lw-h2">Tu preparación</h2>
+      <h2 className="lw-h2">{t.dash.h2}</h2>
       <p className="lw-lead">
         {studied.length === 0 && total === 0
-          ? "Empieza por la primera lección de teoría. El temario está pensado para leerse en orden: cada bloque se apoya en el anterior."
-          : `Llevas ${studied.length} de ${LESSONS.length} lecciones y ${total} preguntas respondidas con un ${pct} % de acierto. El umbral razonable antes de examinarse está por encima del 85 % sostenido.`}
+          ? t.dash.leadEmpty
+          : t.dash.lead(studied.length, LESSONS.length, total, pct)}
       </p>
 
       <div className="lw-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", marginBottom: 18 }}>
         <div className="lw-card">
-          <div className="lw-out">{studied.length}/{LESSONS.length}<small>lecciones estudiadas</small></div>
+          <div className="lw-out">{studied.length}/{LESSONS.length}<small>{t.dash.lessonsStudied}</small></div>
         </div>
         <div className="lw-card">
-          <div className="lw-out">{pct} %<small>acierto en {total} preguntas</small></div>
+          <div className="lw-out">{t.pct(pct)}<small>{t.dash.accuracyIn(total)}</small></div>
         </div>
         <div className="lw-card">
           <div className="lw-out" style={{ color: "var(--amber)" }}>
             {weak ? weak.n.split(" ")[0] : "—"}
-            <small>{weak ? `punto débil: ${weak.n} (${Math.round((weak.s.right / weak.s.seen) * 100)} %)` : "responde unas cuantas preguntas para detectarlo"}</small>
+            <small>{weak ? t.dash.weak(weak.n, Math.round((weak.s.right / weak.s.seen) * 100)) : t.dash.weakNone}</small>
           </div>
         </div>
       </div>
@@ -269,15 +267,15 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
       {nextLesson && (
         <div className="lw-card" style={{ marginBottom: 18 }}>
           <span className="mono" style={{ fontSize: 11.5, color: DOM_COLOR[nextLesson.dom] }}>
-            Continúa por aquí · {DOM_NAME[nextLesson.dom]}
+            {t.dash.continueHere} · {t.dom[nextLesson.dom]}
           </span>
-          <h3 style={{ fontSize: 19, margin: "8px 0 14px" }}>{nextLesson.title}</h3>
-          <button className="lw-btn primary" onClick={() => go("teoria")}>Ir a la lección</button>
+          <h3 style={{ fontSize: 19, margin: "8px 0 14px" }}>{lessonTitle(nextLesson, lang)}</h3>
+          <button className="lw-btn primary" onClick={() => go("teoria")}>{t.dash.goLesson}</button>
         </div>
       )}
 
       <div className="lw-card" style={{ marginBottom: 18 }}>
-        <h3 style={{ fontSize: 16, marginBottom: 14 }}>Dominio por dominio</h3>
+        <h3 style={{ fontSize: 16, marginBottom: 14 }}>{t.dash.byDomain}</h3>
         {DOMAINS.map((d) => {
           const s = stats[d.id];
           const p = s.seen ? (s.right / s.seen) * 100 : 0;
@@ -285,10 +283,10 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
             <div key={d.id} style={{ marginBottom: 13 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, marginBottom: 6 }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <i className="lw-dot" style={{ background: d.c }} />{d.n}
+                  <i className="lw-dot" style={{ background: d.c }} />{t.dom[d.id]}
                 </span>
                 <span className="mono" style={{ color: "var(--muted)", fontSize: 12.5 }}>
-                  {s.seen ? `${s.right}/${s.seen}` : "sin datos"}
+                  {s.seen ? `${s.right}/${s.seen}` : t.dash.noData}
                 </span>
               </div>
               <div className="lw-bar"><i style={{ width: `${p}%`, background: d.c }} /></div>
@@ -297,33 +295,33 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
         })}
       </div>
 
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Preparación para el examen</h3>
+      <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.dash.examReadiness}</h3>
       <div className="lw-card" style={{ marginBottom: 18 }}>
         <div className="lw-kv">
-          <span>Tests completados</span>
-          <b>{runs.length === 0 ? "ninguno todavía" : `${runs.length} · últimos: ${last3.map((r) => `${r.score} %`).join(", ")}`}</b>
+          <span>{t.dash.testsDone}</span>
+          <b>{runs.length === 0 ? t.dash.noneYet : t.dash.testsSummary(runs.length, last3.map((r) => t.pct(r.score)))}</b>
         </div>
         <div className="lw-kv">
-          <span>85 % sostenido en tres intentos</span>
-          <b style={{ color: sustained ? "var(--green)" : "var(--amber)" }}>{sustained ? "conseguido" : "todavía no"}</b>
+          <span>{t.dash.sustained}</span>
+          <b style={{ color: sustained ? "var(--green)" : "var(--amber)" }}>{sustained ? t.dash.achieved : t.dash.notYet}</b>
         </div>
         <div className="lw-kv">
-          <span>Preguntas pendientes de acertar</span>
+          <span>{t.dash.pendingFails}</span>
           <b style={{ color: nFails ? "var(--amber)" : "var(--green)" }}>{nFails}</b>
         </div>
         <div className="lw-kv">
-          <span>Tarjetas asentadas</span>
-          <b>{mastered} de {CARDS.length}{dueToday ? ` · ${dueToday} tocan hoy` : ""}</b>
+          <span>{t.dash.cardsMastered}</span>
+          <b>{t.dash.cardsSummary(mastered, CARDS.length, dueToday)}</b>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-          <button className="lw-btn" onClick={() => go("test")}>Ir al test</button>
-          {dueToday > 0 && <button className="lw-btn ghost" onClick={() => go("tarjetas")}>Repasar tarjetas</button>}
+          <button className="lw-btn" onClick={() => go("test")}>{t.dash.goTest}</button>
+          {dueToday > 0 && <button className="lw-btn ghost" onClick={() => go("tarjetas")}>{t.dash.reviewCards}</button>}
         </div>
       </div>
 
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Plan de cuatro semanas</h3>
+      <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.dash.planTitle}</h3>
       <div style={{ display: "grid", gap: 11, marginBottom: 22 }}>
-        {PLAN.map((p) => (
+        {t.plan.map((p) => (
           <div className="lw-card" key={p.s}>
             <div style={{ display: "flex", gap: 14, alignItems: "baseline", marginBottom: 6 }}>
               <span className="mono" style={{ fontSize: 12, color: "var(--cyan)" }}>{p.s}</span>
@@ -334,42 +332,35 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
         ))}
       </div>
 
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Cómo es el examen</h3>
+      <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.dash.examTitle}</h3>
       <div className="lw-card" style={{ marginBottom: 16 }}>
-        <div className="lw-kv"><span>Formato</span><b>100 preguntas de opción múltiple</b></div>
-        <div className="lw-kv"><span>Banco de preguntas</span><b>más de 300, aleatorizadas</b></div>
-        <div className="lw-kv"><span>Duración</span><b>90 min en una sola sesión</b></div>
-        <div className="lw-kv"><span>Ritmo objetivo</span><b>~54 s por pregunta</b></div>
-        <div className="lw-kv"><span>Perfil recomendado</span><b>2+ años con LoRaWAN</b></div>
-        <div className="lw-kv"><span>Fuente definitiva</span><b>TS001, RP002 y la Resource Library</b></div>
+        {t.dash.exam.map(([k, v]) => (
+          <div className="lw-kv" key={k}><span>{k}</span><b>{v}</b></div>
+        ))}
       </div>
 
       <p className="lw-note" style={{ marginBottom: 14 }}>
-        Material de apoyo elaborado a partir de documentación pública. No reproduce el banco oficial de preguntas.
-        {persists
-          ? " Tu progreso se guarda en este dispositivo y sobrevive a cerrar la app."
-          : " Este navegador no permite guardar datos, así que el progreso se perderá al cerrar la pestaña."}
+        {t.dash.disclaimer}
+        {persists ? t.dash.persists : t.dash.noPersist}
       </p>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        <button className="lw-btn ghost" onClick={onExport}>Exportar mi progreso</button>
-        <button className="lw-btn ghost" onClick={() => fileRef.current?.click()}>Importar progreso</button>
+        <button className="lw-btn ghost" onClick={onExport}>{t.dash.export}</button>
+        <button className="lw-btn ghost" onClick={() => fileRef.current?.click()}>{t.dash.import}</button>
         <input ref={fileRef} type="file" accept="application/json,.json" onChange={handleFile} hidden />
-        {importMsg === "ok" && <span className="lw-note" style={{ color: "var(--green)" }}>Progreso importado.</span>}
+        {importMsg === "ok" && <span className="lw-note" style={{ color: "var(--green)" }}>{t.dash.imported}</span>}
         {importMsg === "error" && (
-          <span className="lw-note" style={{ color: "var(--amber)" }}>
-            El fichero no tiene el formato esperado; no se ha tocado tu progreso.
-          </span>
+          <span className="lw-note" style={{ color: "var(--amber)" }}>{t.dash.importError}</span>
         )}
       </div>
 
       {confirmReset ? (
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="lw-note">Se borrará todo: lecciones, aciertos, tarjetas y fallos pendientes.</span>
-          <button className="lw-btn" onClick={() => { onReset(); setConfirmReset(false); }}>Borrar</button>
-          <button className="lw-btn ghost" onClick={() => setConfirmReset(false)}>Cancelar</button>
+          <span className="lw-note">{t.dash.resetWarn}</span>
+          <button className="lw-btn" onClick={() => { onReset(); setConfirmReset(false); }}>{t.dash.delete}</button>
+          <button className="lw-btn ghost" onClick={() => setConfirmReset(false)}>{t.dash.cancel}</button>
         </div>
       ) : (
-        <button className="lw-btn ghost" onClick={() => setConfirmReset(true)}>Reiniciar mi progreso</button>
+        <button className="lw-btn ghost" onClick={() => setConfirmReset(true)}>{t.dash.reset}</button>
       )}
     </div>
   );
@@ -379,11 +370,15 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
    TARJETAS
    ============================================================ */
 function Flashcards({ cards, onGrade }) {
+  const { lang, t } = useLang();
   const [dom, setDom] = useState("all");
   const [flip, setFlip] = useState(false);
   const [queue, setQueue] = useState([]);
   const [extra, setExtra] = useState(false); // repasar aunque no toque todavía
 
+  /* El mazo y la cola trabajan siempre con las tarjetas en español, cuyo
+     anverso es la clave del progreso guardado. La traducción se aplica solo
+     al pintar la tarjeta en pantalla. */
   const deck = useMemo(() => (dom === "all" ? CARDS : CARDS.filter((c) => c.dom === dom)), [dom]);
   const status = deckStatus(cards, deck);
 
@@ -395,27 +390,25 @@ function Flashcards({ cards, onGrade }) {
     setFlip(false);
   }, [dom, extra]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const card = deck.find((c) => c.f === queue[0]);
+  const raw = deck.find((c) => c.f === queue[0]);
+  const card = raw ? localizeCard(raw, lang) : null;
 
   const grade = (ok) => {
     if (!card) return;
-    onGrade(card.f, ok);
+    onGrade(card.key, ok);
     setFlip(false);
     // Fallar la devuelve al final de la cola: se vuelve a ver hoy, no dentro de tres días.
-    setTimeout(() => setQueue((q) => (ok ? q.slice(1) : [...q.slice(1), card.f])), 120);
+    setTimeout(() => setQueue((q) => (ok ? q.slice(1) : [...q.slice(1), card.key])), 120);
   };
 
   return (
     <div>
-      <h2 className="lw-h2">Tarjetas</h2>
-      <p className="lw-lead">
-        Repaso espaciado: cada tarjeta que aciertas tarda más en volver y las que fallas reaparecen enseguida.
-        Toca la tarjeta para verla del otro lado.
-      </p>
+      <h2 className="lw-h2">{t.cards.h2}</h2>
+      <p className="lw-lead">{t.cards.lead}</p>
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 18 }}>
-        <button className="lw-chip" aria-pressed={dom === "all"} onClick={() => setDom("all")}>Todas</button>
+        <button className="lw-chip" aria-pressed={dom === "all"} onClick={() => setDom("all")}>{t.cards.all}</button>
         {DOMAINS.map((d) => (
-          <button key={d.id} className="lw-chip" aria-pressed={dom === d.id} onClick={() => setDom(d.id)}>{d.n}</button>
+          <button key={d.id} className="lw-chip" aria-pressed={dom === d.id} onClick={() => setDom(d.id)}>{t.dom[d.id]}</button>
         ))}
       </div>
 
@@ -426,10 +419,10 @@ function Flashcards({ cards, onGrade }) {
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFlip((f) => !f); } }}>
               <div className="lw-face">
                 <span className="mono" style={{ fontSize: 11.5, color: DOM_COLOR[card.dom], marginBottom: 12 }}>
-                  {DOM_NAME[card.dom]} · caja {cardState(cards, card.f).box} de 5
+                  {t.dom[card.dom]} · {t.cards.box(cardState(cards, card.key).box, BOXES)}
                 </span>
                 <h3 style={{ fontSize: 27, lineHeight: 1.2 }}>{card.f}</h3>
-                <span className="lw-note" style={{ marginTop: 16 }}>Toca para ver la respuesta</span>
+                <span className="lw-note" style={{ marginTop: 16 }}>{t.cards.tapToFlip}</span>
               </div>
               <div className="lw-face back">
                 <p style={{ fontSize: 17, lineHeight: 1.5 }}>{card.b}</p>
@@ -437,10 +430,10 @@ function Flashcards({ cards, onGrade }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button className="lw-btn ghost" onClick={() => grade(false)}>No la sabía</button>
-            <button className="lw-btn primary" onClick={() => grade(true)}>La sé</button>
+            <button className="lw-btn ghost" onClick={() => grade(false)}>{t.cards.unknown}</button>
+            <button className="lw-btn primary" onClick={() => grade(true)}>{t.cards.known}</button>
             <span className="lw-note mono" style={{ marginLeft: "auto" }}>
-              quedan {queue.length} · dominadas {status.mastered} de {deck.length}
+              {t.cards.status(queue.length, status.mastered, deck.length)}
             </span>
           </div>
           <div className="lw-bar" style={{ marginTop: 14 }}>
@@ -449,14 +442,14 @@ function Flashcards({ cards, onGrade }) {
         </>
       ) : (
         <div className="lw-card">
-          <h3 style={{ fontSize: 18, marginBottom: 10 }}>Repaso al día</h3>
+          <h3 style={{ fontSize: 18, marginBottom: 10 }}>{t.cards.upToDate}</h3>
           <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: "60ch", marginBottom: 16 }}>
-            No queda ninguna tarjeta pendiente en esta selección
-            {status.nextDue ? `. La siguiente vuelve ${humanDelay(status.nextDue - Date.now())}` : ""}.
-            Has asentado {status.mastered} de {deck.length}.
+            {t.cards.nonePending}
+            {status.nextDue ? t.cards.nextBack(humanDelay(status.nextDue - Date.now(), lang)) : ""}.
+            {t.cards.mastered(status.mastered, deck.length)}
           </p>
           <button className="lw-btn" onClick={() => setExtra((v) => !v)}>
-            {extra ? "Volver al repaso programado" : "Repasar el mazo entero de todos modos"}
+            {extra ? t.cards.backToScheduled : t.cards.reviewAll}
           </button>
         </div>
       )}
@@ -470,6 +463,7 @@ function Flashcards({ cards, onGrade }) {
 const MOCK_LEN = 100; // el examen real: 100 preguntas en 90 minutos
 
 function Quiz({ record, failed, onAnswer, onRun }) {
+  const { lang, t } = useLang();
   const [phase, setPhase] = useState("setup");
   const [doms, setDoms] = useState(DOMAINS.map((d) => d.id));
   const [len, setLen] = useState(15);
@@ -519,9 +513,10 @@ function Quiz({ record, failed, onAnswer, onRun }) {
   const start = (mode) => {
     const chosen = buildSet(mode);
     const isMock = mode === "mock";
-    // Las opciones se barajan en cada intento: la posición de la correcta
-    // no debe ser una pista aprendible.
-    setSet(chosen.map((q) => shuffleOptions(q, randSeed())));
+    // Primero se traduce (las opciones mantienen el orden, así que `a` sigue
+    // valiendo) y después se barajan las opciones en cada intento: la
+    // posición de la correcta no debe ser una pista aprendible.
+    setSet(chosen.map((q) => shuffleOptions(localizeQuestion(q, lang), randSeed())));
     setMock(isMock);
     setLeft(isMock ? Math.round((90 * 60 * chosen.length) / 100) : 0);
     setI(0); setPick(null); setLog([]); setSaved(false); setPhase("run");
@@ -547,51 +542,45 @@ function Quiz({ record, failed, onAnswer, onRun }) {
     const failsHere = QUESTIONS.filter((q) => failed[q.id] && doms.includes(q.dom)).length;
     return (
       <div>
-        <h2 className="lw-h2">Test</h2>
-        <p className="lw-lead">
-          Elige dominios y longitud, o lanza un simulacro con todo el banco y reloj proporcional al examen real.
-          Las opciones se barajan en cada intento.
-        </p>
+        <h2 className="lw-h2">{t.quiz.h2}</h2>
+        <p className="lw-lead">{t.quiz.lead}</p>
         <div className="lw-card" style={{ marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>Dominios</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t.quiz.domains}</h3>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 20 }}>
             {DOMAINS.map((d) => (
-              <button key={d.id} className="lw-chip" aria-pressed={doms.includes(d.id)} onClick={() => toggle(d.id)}>{d.n}</button>
+              <button key={d.id} className="lw-chip" aria-pressed={doms.includes(d.id)} onClick={() => toggle(d.id)}>{t.dom[d.id]}</button>
             ))}
           </div>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>Número de preguntas</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 12 }}>{t.quiz.count}</h3>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 20 }}>
             {[10, 15, 25, 40].map((n) => (
               <button key={n} className="lw-chip" aria-pressed={len === n} onClick={() => setLen(n)}>{n}</button>
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <button className="lw-btn primary" onClick={() => start("custom")}>Empezar test</button>
+            <button className="lw-btn primary" onClick={() => start("custom")}>{t.quiz.start}</button>
             <span className="lw-note">
-              {Math.min(len, avail)} preguntas de {avail} disponibles en tu selección
-              {failsHere > 0 ? ` · entran primero tus ${failsHere} pendientes` : ""}
+              {t.quiz.available(Math.min(len, avail), avail)}
+              {failsHere > 0 ? t.quiz.failsFirst(failsHere) : ""}
             </span>
           </div>
         </div>
 
         <div className="lw-card" style={{ marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 8 }}>Repaso de fallos</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 8 }}>{t.quiz.failsTitle}</h3>
           <p className="lw-note" style={{ marginBottom: 14, maxWidth: "62ch" }}>
-            {nFails > 0
-              ? `Tienes ${nFails} preguntas pendientes de acertar. Una pregunta sale de la lista cuando la aciertas más tarde, no cuando la lees.`
-              : "Aquí se acumularán las preguntas que falles. Salen de la lista cuando las aciertas en un intento posterior."}
+            {nFails > 0 ? t.quiz.failsPending(nFails) : t.quiz.failsEmpty}
           </p>
           <button className="lw-btn" disabled={nFails === 0} onClick={() => start("fails")}>
-            Repasar mis {nFails} fallos
+            {t.quiz.reviewFails(nFails)}
           </button>
         </div>
         <div className="lw-card">
-          <h3 style={{ fontSize: 15, marginBottom: 8 }}>Simulacro cronometrado</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 8 }}>{t.quiz.mockTitle}</h3>
           <p className="lw-note" style={{ marginBottom: 14, maxWidth: "62ch" }}>
-            {Math.min(MOCK_LEN, QUESTIONS.length)} preguntas al azar de las {QUESTIONS.length} del banco,
-            con el formato del examen real: 90 minutos, sin explicaciones hasta el final.
+            {t.quiz.mockText(Math.min(MOCK_LEN, QUESTIONS.length), QUESTIONS.length)}
           </p>
-          <button className="lw-btn" onClick={() => start("mock")}>Lanzar simulacro</button>
+          <button className="lw-btn" onClick={() => start("mock")}>{t.quiz.mockStart}</button>
         </div>
       </div>
     );
@@ -603,7 +592,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 14 }}>
-          <span className="mono" style={{ fontSize: 12.5, color: DOM_COLOR[q.dom] }}>{DOM_NAME[q.dom]}</span>
+          <span className="mono" style={{ fontSize: 12.5, color: DOM_COLOR[q.dom] }}>{t.dom[q.dom]}</span>
           <span className="mono" style={{ fontSize: 12.5, color: "var(--muted)" }}>
             {i + 1} / {set.length}{mock ? ` · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : ""}
           </span>
@@ -624,7 +613,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
           <div style={{ marginTop: 14 }}>
             <div className="lw-exp">
               <b style={{ color: pick === q.a ? "var(--green)" : "var(--red)" }}>
-                {pick === q.a ? "Correcto. " : "Incorrecto. "}
+                {pick === q.a ? t.quiz.correct : t.quiz.incorrect}
               </b>
               {q.exp}
             </div>
@@ -634,7 +623,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
         {done && (
           <div style={{ marginTop: 18 }}>
             <button className="lw-btn primary" onClick={advance}>
-              {i + 1 >= set.length ? "Ver resultado" : "Siguiente"}
+              {i + 1 >= set.length ? t.quiz.seeResult : t.quiz.next}
             </button>
           </div>
         )}
@@ -647,29 +636,25 @@ function Quiz({ record, failed, onAnswer, onRun }) {
   const fails = log.filter((l) => l.idx !== l.q.a);
   return (
     <div>
-      <h2 className="lw-h2">Resultado</h2>
+      <h2 className="lw-h2">{t.quiz.result}</h2>
       <div className="lw-card" style={{ marginBottom: 18 }}>
         <div className="lw-out" style={{ fontSize: 44, color: score >= 85 ? "var(--green)" : score >= 70 ? "var(--amber)" : "var(--red)" }}>
-          {score} %<small>{hits} aciertos de {log.length} respondidas</small>
+          {t.pct(score)}<small>{t.quiz.hits(hits, log.length)}</small>
         </div>
         <p style={{ marginTop: 16, fontSize: 14, maxWidth: "62ch", color: "var(--muted)" }}>
-          {score >= 85
-            ? "Nivel sólido. Mantén este rango en varios simulacros seguidos y trabaja solo los fallos residuales."
-            : score >= 70
-            ? "Vas por buen camino. Los fallos suelen concentrarse en valores numéricos y en el detalle de los comandos MAC."
-            : "Vuelve a la teoría del dominio donde más has fallado antes de repetir el test."}
+          {score >= 85 ? t.quiz.feedbackHigh : score >= 70 ? t.quiz.feedbackMid : t.quiz.feedbackLow}
         </p>
       </div>
       {fails.length > 0 && (
         <>
-          <h3 style={{ fontSize: 16, marginBottom: 12 }}>Repaso de fallos</h3>
+          <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.quiz.failsTitle}</h3>
           <div style={{ display: "grid", gap: 12, marginBottom: 20 }}>
             {fails.map((f, k) => (
               <div className="lw-card" key={k}>
-                <span className="mono" style={{ fontSize: 11.5, color: DOM_COLOR[f.q.dom] }}>{DOM_NAME[f.q.dom]}</span>
+                <span className="mono" style={{ fontSize: 11.5, color: DOM_COLOR[f.q.dom] }}>{t.dom[f.q.dom]}</span>
                 <p style={{ fontSize: 15, margin: "8px 0 12px", fontWeight: 500 }}>{f.q.q}</p>
-                <div className="lw-kv"><span style={{ color: "var(--red)" }}>Tu respuesta</span><b>{f.q.opts[f.idx]}</b></div>
-                <div className="lw-kv"><span style={{ color: "var(--green)" }}>Correcta</span><b>{f.q.opts[f.q.a]}</b></div>
+                <div className="lw-kv"><span style={{ color: "var(--red)" }}>{t.quiz.yourAnswer}</span><b>{f.q.opts[f.idx]}</b></div>
+                <div className="lw-kv"><span style={{ color: "var(--green)" }}>{t.quiz.correctAnswer}</span><b>{f.q.opts[f.q.a]}</b></div>
                 <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 12 }}>{f.q.exp}</p>
                 {f.q.ref && <div className="lw-ref">{f.q.ref}</div>}
               </div>
@@ -677,7 +662,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
           </div>
         </>
       )}
-      <button className="lw-btn primary" onClick={() => setPhase("setup")}>Otro test</button>
+      <button className="lw-btn primary" onClick={() => setPhase("setup")}>{t.quiz.again}</button>
     </div>
   );
 }
@@ -686,6 +671,8 @@ function Quiz({ record, failed, onAnswer, onRun }) {
    CALCULADORAS
    ============================================================ */
 function Tools() {
+  const { t } = useLang();
+  const f = (n, d) => fmt(n, d, t.locale);
   const [sf, setSf] = useState(7);
   const [bw, setBw] = useState(125000);
   const [cr, setCr] = useState(1);
@@ -715,36 +702,33 @@ function Tools() {
 
   return (
     <div>
-      <h2 className="lw-h2">Calculadoras</h2>
-      <p className="lw-lead">
-        Los cálculos que el examen espera que sepas razonar. Están explicados en las lecciones de capa física y
-        de despliegue.
-      </p>
+      <h2 className="lw-h2">{t.tools.h2}</h2>
+      <p className="lw-lead">{t.tools.lead}</p>
 
       <div className="lw-card" style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: 16, marginBottom: 16 }}>Tiempo en aire</h3>
+        <h3 style={{ fontSize: 16, marginBottom: 16 }}>{t.tools.toa}</h3>
         <div className="lw-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
-          <Field label="Spreading factor">
+          <Field label={t.tools.sf}>
             <select value={sf} onChange={(e) => setSf(+e.target.value)}>
               {[7, 8, 9, 10, 11, 12].map((v) => <option key={v} value={v}>SF{v}</option>)}
             </select>
           </Field>
-          <Field label="Ancho de banda">
+          <Field label={t.tools.bw}>
             <select value={bw} onChange={(e) => setBw(+e.target.value)}>
               <option value={125000}>125 kHz</option><option value={250000}>250 kHz</option><option value={500000}>500 kHz</option>
             </select>
           </Field>
-          <Field label="Coding rate">
+          <Field label={t.tools.cr}>
             <select value={cr} onChange={(e) => setCr(+e.target.value)}>
               {[1, 2, 3, 4].map((v) => <option key={v} value={v}>4/{4 + v}</option>)}
             </select>
           </Field>
-          <Field label="Carga de aplicación (B)">
+          <Field label={t.tools.payload}>
             <input type="number" min="0" max="242" value={app} onChange={(e) => setApp(Math.max(0, Math.min(242, +e.target.value || 0)))} />
           </Field>
-          <Field label="Ciclo de trabajo (%)">
+          <Field label={t.tools.dc}>
             <select value={dc} onChange={(e) => setDc(+e.target.value)}>
-              <option value={1}>1 % (EU868 por defecto)</option><option value={10}>10 % (869,4–869,65)</option><option value={0.1}>0,1 %</option>
+              <option value={1}>{t.tools.dcDefault}</option><option value={10}>{t.tools.dcHigh}</option><option value={0.1}>{t.tools.dcLow}</option>
             </select>
           </Field>
         </div>
@@ -753,42 +737,39 @@ function Tools() {
           {chirps}
         </svg>
         <div className="lw-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
-          <div><div className="lw-out">{fmt(r.toa)} ms<small>tiempo en aire</small></div></div>
-          <div><div className="lw-out">{fmt(r.tSym, 2)} ms<small>duración de símbolo</small></div></div>
-          <div><div className="lw-out">{perHour < 1 ? fmt(perHour, 2) : Math.floor(perHour)}<small>tramas por hora al {String(dc).replace(".", ",")} %</small></div></div>
-          <div><div className="lw-out">{fmt(wait, 1)} s<small>espera mínima entre envíos</small></div></div>
+          <div><div className="lw-out">{f(r.toa)} ms<small>{t.tools.toaOut}</small></div></div>
+          <div><div className="lw-out">{f(r.tSym, 2)} ms<small>{t.tools.tsymOut}</small></div></div>
+          <div><div className="lw-out">{perHour < 1 ? f(perHour, 2) : Math.floor(perHour)}<small>{t.tools.perHour(f(dc, dc % 1 ? 1 : 0))}</small></div></div>
+          <div><div className="lw-out">{f(wait, 1)} s<small>{t.tools.minWait}</small></div></div>
         </div>
         <p className="lw-note" style={{ marginTop: 14 }}>
-          PHYPayload = {phyLen} B ({app} de aplicación + 13 de cabeceras y MIC) · {r.symbols} símbolos de payload
-          {r.de ? " · LDRO activo" : ""}
+          {t.tools.phyNote(phyLen, app, r.symbols)}
+          {r.de ? t.tools.ldro : ""}
         </p>
       </div>
 
       <div className="lw-card">
-        <h3 style={{ fontSize: 16, marginBottom: 16 }}>Presupuesto de enlace</h3>
+        <h3 style={{ fontSize: 16, marginBottom: 16 }}>{t.tools.linkBudget}</h3>
         <div className="lw-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", marginBottom: 20 }}>
-          <Field label="Potencia TX (dBm)"><input type="number" value={ptx} onChange={(e) => setPtx(+e.target.value || 0)} /></Field>
-          <Field label="Ganancia antena TX (dBi)"><input type="number" value={gtx} onChange={(e) => setGtx(+e.target.value || 0)} /></Field>
-          <Field label="Ganancia antena RX (dBi)"><input type="number" value={grx} onChange={(e) => setGrx(+e.target.value || 0)} /></Field>
-          <Field label="Pérdidas de cable (dB)"><input type="number" value={loss} onChange={(e) => setLoss(+e.target.value || 0)} /></Field>
-          <Field label="Entorno">
+          <Field label={t.tools.ptx}><input type="number" value={ptx} onChange={(e) => setPtx(+e.target.value || 0)} /></Field>
+          <Field label={t.tools.gtx}><input type="number" value={gtx} onChange={(e) => setGtx(+e.target.value || 0)} /></Field>
+          <Field label={t.tools.grx}><input type="number" value={grx} onChange={(e) => setGrx(+e.target.value || 0)} /></Field>
+          <Field label={t.tools.loss}><input type="number" value={loss} onChange={(e) => setLoss(+e.target.value || 0)} /></Field>
+          <Field label={t.tools.env}>
             <select value={nExp} onChange={(e) => setNExp(+e.target.value)}>
-              <option value={2.2}>Rural con línea de vista</option>
-              <option value={2.7}>Suburbano</option>
-              <option value={3.2}>Urbano</option>
-              <option value={3.8}>Urbano denso o interior</option>
+              <option value={2.2}>{t.tools.envRural}</option>
+              <option value={2.7}>{t.tools.envSuburban}</option>
+              <option value={3.2}>{t.tools.envUrban}</option>
+              <option value={3.8}>{t.tools.envDense}</option>
             </select>
           </Field>
         </div>
         <div className="lw-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))" }}>
-          <div><div className="lw-out">{fmt(sens, 1)} dBm<small>sensibilidad estimada en SF{sf}</small></div></div>
-          <div><div className="lw-out">{fmt(maxPL, 1)} dB<small>pérdida de propagación admisible</small></div></div>
-          <div><div className="lw-out">{dKm < 1 ? `${fmt(dKm * 1000, 0)} m` : `${fmt(dKm, 1)} km`}<small>alcance orientativo a 868 MHz</small></div></div>
+          <div><div className="lw-out">{f(sens, 1)} dBm<small>{t.tools.sens(sf)}</small></div></div>
+          <div><div className="lw-out">{f(maxPL, 1)} dB<small>{t.tools.maxPL}</small></div></div>
+          <div><div className="lw-out">{dKm < 1 ? `${f(dKm * 1000, 0)} m` : `${f(dKm, 1)} km`}<small>{t.tools.range}</small></div></div>
         </div>
-        <p className="lw-note" style={{ marginTop: 14 }}>
-          Modelo log-distancia sin margen de desvanecimiento. Para diseño real, resta entre 10 y 20 dB y valida
-          con medidas de campo.
-        </p>
+        <p className="lw-note" style={{ marginTop: 14 }}>{t.tools.modelNote}</p>
       </div>
     </div>
   );
@@ -798,20 +779,20 @@ function Tools() {
    REFERENCIA
    ============================================================ */
 function Reference() {
+  const { lang, t } = useLang();
+  const T = tables(lang);
   const blocks = [
-    { t: "Data rates en EU868", h: ["DR", "SF", "BW", "Tasa", "Payload máx."], r: T_DR_EU, m: [0, 1, 2, 3, 4] },
-    { t: "Tipos de mensaje (MType)", h: ["Valor", "Mensaje", "Sentido"], r: T_MTYPE, m: [0] },
-    { t: "Comandos MAC", h: ["CID", "Comando", "Lo inicia", "Función"], r: T_CID, m: [0] },
-    { t: "Claves", h: ["Clave", "Versión", "Tipo", "Uso"], r: T_KEYS, m: [] },
-    { t: "Temporización y constantes", h: ["Parámetro", "Valor", "Significado"], r: T_TIMES, m: [1] },
-    { t: "Documentos de la LoRa Alliance", h: ["Ref.", "Documento", "Contenido"], r: T_DOCS, m: [0] },
+    { ...t.ref.dr, r: T.T_DR_EU, m: [0, 1, 2, 3, 4] },
+    { ...t.ref.mtype, r: T.T_MTYPE, m: [0] },
+    { ...t.ref.cid, r: T.T_CID, m: [0] },
+    { ...t.ref.keys, r: T.T_KEYS, m: [] },
+    { ...t.ref.times, r: T.T_TIMES, m: [1] },
+    { ...t.ref.docs, r: T.T_DOCS, m: [0] },
   ];
   return (
     <div>
-      <h2 className="lw-h2">Referencia rápida</h2>
-      <p className="lw-lead">
-        Las tablas que conviene tener memorizadas. Son la respuesta a la mayoría de preguntas numéricas.
-      </p>
+      <h2 className="lw-h2">{t.ref.h2}</h2>
+      <p className="lw-lead">{t.ref.lead}</p>
       <div style={{ display: "grid", gap: 16 }}>
         {blocks.map((b) => (
           <div className="lw-card" key={b.t}>
@@ -827,18 +808,25 @@ function Reference() {
 /* ============================================================
    APP
    ============================================================ */
-const TABS = [
-  { id: "panel", n: "Panel" },
-  { id: "teoria", n: "Teoría" },
-  { id: "tarjetas", n: "Tarjetas" },
-  { id: "test", n: "Test" },
-  { id: "calculadoras", n: "Calculadoras" },
-  { id: "referencia", n: "Referencia" },
-];
+const TAB_IDS = ["panel", "teoria", "tarjetas", "test", "calculadoras", "referencia"];
 
 const DOM_IDS = DOMAINS.map((d) => d.id);
 
-export default function App() {
+function LangSwitch() {
+  const { lang, t, setLang } = useLang();
+  return (
+    <div className="lw-lang" role="group" aria-label={t.lang.label}>
+      {LANGS.map((l) => (
+        <button key={l} className="lw-lang-btn" aria-pressed={lang === l} lang={l} onClick={() => setLang(l)}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Shell() {
+  const { lang, t } = useLang();
   const [tab, setTab] = useState("panel");
   /* El progreso se lee del almacenamiento del dispositivo en el primer render
      y se reescribe en cada cambio. Si el navegador no deja guardar (modo
@@ -883,10 +871,10 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `progreso-ap-trainer-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `${t.dash.exportFile}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [state]);
+  }, [state, t]);
 
   /* El mismo saneado campo a campo que loadState(): un fichero importado es
      entrada tan poco fiable como lo que ya hubiera en localStorage. */
@@ -897,6 +885,8 @@ export default function App() {
     return true;
   }, []);
 
+  const nQuestions = QUESTIONS.length + LESSONS.reduce((s, l) => s + l.checks.length, 0);
+
   return (
     <div className="lw">
       <style>{CSS}</style>
@@ -905,30 +895,32 @@ export default function App() {
         <Waterfall />
         <div className="lw-hero-inner">
           <h1 className="lw-title">LPWAN<br />AP Trainer</h1>
-          <p className="lw-sub">
-            Curso completo y entrenamiento para el examen de certificación LoRaWAN Accredited Professional: teoría
-            explicada, tarjetas, tests por dominio, simulacro cronometrado y calculadoras de radio.
-          </p>
+          <p className="lw-sub">{t.hero.sub}</p>
           <div className="lw-facts">
-            <span className="lw-fact"><b>{LESSONS.length}</b> lecciones</span>
-            <span className="lw-fact"><b>{QUESTIONS.length + LESSONS.reduce((s, l) => s + l.checks.length, 0)}</b> preguntas</span>
-            <span className="lw-fact"><b>{CARDS.length}</b> tarjetas</span>
-            <span className="lw-fact">examen: <b>100</b> preguntas en <b>90</b> min</span>
+            <span className="lw-fact"><b>{LESSONS.length}</b> {t.hero.lessons}</span>
+            <span className="lw-fact"><b>{nQuestions}</b> {t.hero.questions}</span>
+            <span className="lw-fact"><b>{CARDS.length}</b> {t.hero.cards}</span>
+            <span className="lw-fact">{t.hero.examPrefix} <b>100</b> {t.hero.examMid} <b>90</b> {t.hero.examSuffix}</span>
           </div>
         </div>
       </header>
 
       <nav className="lw-nav">
-        <div className="lw-nav-in" role="tablist">
-          {TABS.map((t) => (
-            <button key={t.id} className="lw-tab" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-              {t.n}
-            </button>
-          ))}
+        <div className="lw-nav-in">
+          <div role="tablist" style={{ display: "flex", gap: 2 }}>
+            {TAB_IDS.map((id) => (
+              <button key={id} className="lw-tab" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
+                {t.tabs[id]}
+              </button>
+            ))}
+          </div>
+          <LangSwitch />
         </div>
       </nav>
 
-      <main className="lw-wrap" style={{ paddingTop: 28 }}>
+      {/* La clave por idioma remonta la pestaña al cambiar de idioma, para que
+          un test o una lección abiertos no se queden a medias en dos idiomas. */}
+      <main className="lw-wrap" style={{ paddingTop: 28 }} key={lang}>
         {tab === "panel" && (
           <Dashboard stats={stats} studied={studied} cards={cards} failed={failed}
             runs={runs} persists={persists} onReset={reset} onExport={doExport} onImport={doImport} go={setTab} />
@@ -940,10 +932,15 @@ export default function App() {
         {tab === "referencia" && <Reference />}
       </main>
 
-      <footer className="lw-footer">
-        Proyecto independiente, no afiliado ni respaldado por la LoRa Alliance. LoRaWAN® es una
-        marca registrada de la LoRa Alliance, Inc.
-      </footer>
+      <footer className="lw-footer">{t.footer}</footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LangProvider>
+      <Shell />
+    </LangProvider>
   );
 }

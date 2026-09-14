@@ -199,14 +199,23 @@ export function deckStatus(cards, deck, now = Date.now()) {
   return { due, mastered: mastered.length, seen: seen.length, nextDue };
 }
 
-export function humanDelay(ms) {
-  if (!ms || ms <= 0) return "ahora";
+/* "Dentro de cuánto vuelve la tarjeta", en el idioma de la interfaz. Los
+   textos viven aquí y no en src/i18n para que este módulo siga sin depender
+   de React ni de la capa de cadenas. */
+const DELAY_TEXT = {
+  es: { now: "ahora", min: (m) => `en ${m} min`, h: (h) => `en ${h} h`, tomorrow: "mañana", days: (d) => `en ${d} días` },
+  en: { now: "now", min: (m) => `in ${m} min`, h: (h) => `in ${h} h`, tomorrow: "tomorrow", days: (d) => `in ${d} days` },
+};
+
+export function humanDelay(ms, lang = "es") {
+  const t = DELAY_TEXT[lang] || DELAY_TEXT.es;
+  if (!ms || ms <= 0) return t.now;
   const m = Math.round(ms / MIN);
-  if (m < 60) return `en ${m} min`;
+  if (m < 60) return t.min(m);
   const h = Math.round(m / 60);
-  if (h < 24) return `en ${h} h`;
+  if (h < 24) return t.h(h);
   const d = Math.round(h / 24);
-  return d === 1 ? "mañana" : `en ${d} días`;
+  return d === 1 ? t.tomorrow : t.days(d);
 }
 
 /* ---------- Fallos pendientes ----------

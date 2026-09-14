@@ -10,7 +10,10 @@ export function timeOnAir({ sf, bw, cr, payload, preamble = 8, crc = 1, header =
   return { tSym: tSym * 1000, toa: (tPre + tPay) * 1000, symbols: nPayload, de };
 }
 export const SENS = { 7: -123, 8: -126, 9: -129, 10: -132, 11: -134.5, 12: -137 };
-export const fmt = (n, d = 1) => n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+/* Formato numérico según el idioma de la interfaz: coma decimal en español,
+   punto en inglés. Por defecto español, que es como se escribió el banco. */
+export const fmt = (n, d = 1, locale = "es-ES") =>
+  n.toLocaleString(locale, { minimumFractionDigits: d, maximumFractionDigits: d });
 
 /* Generador pseudoaleatorio con semilla (mulberry32).
 

@@ -18,6 +18,11 @@ examen de certificación que cubre el temario.
 
 **App publicada:** https://agonzaleztic-source.github.io/lpwan-ap-trainer/
 
+> **English:** the interface, the 201-question quiz bank, the 72 lesson checks, the flashcards
+> and the reference tables are available in English. Use the **ES / EN** switch in the
+> navigation bar; the choice is remembered on the device. The 24 lesson texts are in Spanish
+> for now. The exam itself is in English, so the mock exam can be taken in the exam's language.
+
 ## Cómo entrena
 
 - **Las opciones se barajan en cada intento.** La posición de la respuesta correcta nunca es
@@ -31,6 +36,10 @@ examen de certificación que cubre el temario.
 - **El progreso se puede exportar e importar.** Desde el panel, un botón descarga un JSON con
   todo el estado y otro lo restaura en cualquier dispositivo, validado con el mismo saneado
   que protege lo que vuelve de `localStorage`.
+- **Se estudia en español o en inglés.** El selector ES / EN de la barra de navegación cambia
+  la interfaz, el banco de tests, las comprobaciones, las tarjetas y las tablas de referencia.
+  El examen real es en inglés, así que el simulacro se puede hacer en el idioma del examen.
+  Las 24 lecciones de teoría siguen solo en español.
 
 ## Instalarla en el móvil
 
@@ -63,7 +72,7 @@ npm run preview
 ## Comprobaciones
 
 ```bash
-npm test     # 41 pruebas: cálculos de radio, motor de repaso e integridad del banco
+npm test     # 59 pruebas: cálculos de radio, motor de repaso, integridad del banco y cobertura de la traducción
 npm run audit
 ```
 
@@ -72,8 +81,10 @@ contra los valores de referencia de Semtech (SF7/125 kHz/13 B = 46,3 ms;
 SF12 = 1,155 s), el reparto uniforme de la respuesta correcta entre las cuatro
 posiciones al barajar, que ningún enunciado se repita en el banco, la
 progresión de cajas de Leitner y el saneado de lo que vuelve de
-`localStorage`. Se ejecutan, junto con la auditoría de dependencias, en cada
-push a `main` antes de publicar.
+`localStorage`. También que cada pregunta, comprobación, tarjeta y tabla tenga su
+traducción al inglés completa y con las cuatro opciones, y que las cadenas de interfaz
+de los dos idiomas tengan las mismas claves. Se ejecutan, junto con la auditoría de
+dependencias, en cada push a `main` antes de publicar.
 
 Sobre el modelo de amenaza, las medidas y sus límites: [SECURITY.md](SECURITY.md).
 
@@ -90,12 +101,18 @@ Sobre el modelo de amenaza, las medidas y sus límites: [SECURITY.md](SECURITY.m
 │   ├── lib/radio.js            tiempo en aire, sensibilidad y barajado de opciones
 │   ├── lib/store.js            progreso guardado y repaso espaciado
 │   ├── lib/*.test.js           pruebas de ambos módulos
+│   ├── i18n
+│   │   ├── strings.js          cadenas de la interfaz en español e inglés
+│   │   ├── lang.jsx            selector de idioma: detección, persistencia y contexto
+│   │   └── content.js          fusiona las traducciones sobre el contenido español
 │   └── data
 │       ├── domains.js          los ocho dominios temáticos
 │       ├── lessons.js          las 24 lecciones de teoría
 │       ├── questions.js        banco de preguntas de los tests
 │       ├── cards.js            tarjetas de repaso
-│       └── tables.js           tablas de referencia rápida
+│       ├── tables.js           tablas de referencia rápida
+│       └── en/                 traducción al inglés de preguntas, comprobaciones,
+│                               tarjetas, tablas y títulos de lección
 ├── public
 │   ├── manifest.webmanifest    permite instalarla como app
 │   ├── fonts/                  tipografías autoalojadas, subconjunto latino
@@ -108,6 +125,12 @@ Sobre el modelo de amenaza, las medidas y sus límites: [SECURITY.md](SECURITY.m
 
 El contenido de estudio está separado de la interfaz: todo vive en `src/data/`, así que puedes
 ampliar el temario sin tocar una sola línea de React.
+
+El español es la fuente de verdad. Las traducciones viven en `src/data/en/`, indexadas por lo que
+identifica a cada elemento (el `id` de la pregunta, la lección y la posición de la comprobación,
+el anverso español de la tarjeta) y solo contienen texto: el índice de la respuesta correcta, el
+dominio y la referencia se leen siempre del original. Las opciones traducidas van en el mismo
+orden que las españolas; `npm test` falla si a alguna pregunta le falta traducción.
 
 ## Añadir una lección
 
@@ -146,6 +169,16 @@ En `src/data/questions.js`. El campo `a` es el índice de la opción correcta em
 Los `dom` válidos son: `phy`, `arq`, `cls`, `sec`, `mac`, `cmd`, `reg`, `ops`. El campo `ref`
 es opcional: solo añádelo si has comprobado la sección contra el PDF oficial de TS001, RP002
 o TS002; si no, mejor dejarlo sin poner que citar de memoria.
+
+Añade después su traducción en `src/data/en/questions.en.js`, con el mismo `id` y las opciones
+en el mismo orden (sin `a`, `dom` ni `ref`):
+
+```js
+75: { q: "Which command adjusts the RX1 delay?",
+  opts: ["RXParamSetupReq", "RXTimingSetupReq", "DlChannelReq", "NewChannelReq"],
+  exp: "RXTimingSetupReq (0x08) modifies RECEIVE_DELAY1; RECEIVE_DELAY2 is derived by adding 1 s." },
+```
+
 Guarda, comprueba en local con `npm run dev` y publica con un push a `main`.
 
 ## Aviso sobre el contenido
