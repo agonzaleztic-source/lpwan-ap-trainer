@@ -9,6 +9,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { STRINGS, LANGS } from "./strings.js";
+import { loadEnglish, englishLoaded } from "./content.js";
 
 const KEY = "lorawan-ap-trainer/lang";
 export const DEFAULT_LANG = "es";
@@ -34,11 +35,28 @@ const LangContext = createContext({ lang: DEFAULT_LANG, t: STRINGS[DEFAULT_LANG]
 
 export function LangProvider({ children }) {
   const [lang, setLangState] = useState(readLang);
+  /* El contenido en inglés viaja en un chunk aparte (ver content.js). La app
+     no se pinta en inglés hasta tenerlo, para no enseñar un instante de
+     español a quien entra con el navegador en otro idioma. */
+  const [ready, setReady] = useState(() => lang === "es" || englishLoaded());
+
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    loadEnglish().then(
+      () => live && setReady(true),
+      /* Sin red y sin el chunk cacheado: se queda en español. */
+      () => { if (live) { setLangState("es"); setReady(true); } },
+    );
+    return () => { live = false; };
+  }, [ready]);
 
   const setLang = useCallback((next) => {
     if (!LANGS.includes(next)) return;
     writeLang(next);
-    setLangState(next);
+    if (next === "es" || englishLoaded()) { setLangState(next); return; }
+    /* Sigue viéndose el idioma actual hasta que llegue el chunk. */
+    loadEnglish().then(() => setLangState(next), () => {});
   }, []);
 
   /* El atributo lang del documento importa para lectores de pantalla,
@@ -46,7 +64,7 @@ export function LangProvider({ children }) {
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const value = useMemo(() => ({ lang, t: STRINGS[lang], setLang }), [lang, setLang]);
-  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
+  return <LangContext.Provider value={value}>{ready ? children : null}</LangContext.Provider>;
 }
 
 export function useLang() {

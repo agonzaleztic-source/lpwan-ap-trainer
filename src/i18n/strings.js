@@ -54,7 +54,6 @@ const es = {
     h2: "Teoría",
     lead: (hours) => `Veinticuatro lecciones que cubren la materia del examen desde cero, con las ideas clave, las trampas habituales y tres preguntas de comprobación al final de cada una. Unas ${hours} horas de lectura en total.`,
     progress: (done, total) => `${done} de ${total} lecciones estudiadas`,
-    spanishOnly: null, // solo tiene sentido fuera del español
   },
 
   plan: [
@@ -259,7 +258,6 @@ const en = {
     h2: "Theory",
     lead: (hours) => `Twenty-four lessons covering the exam syllabus from scratch, with the key ideas, the usual traps and three check questions at the end of each one. About ${hours} hours of reading in total.`,
     progress: (done, total) => `${done} of ${total} lessons studied`,
-    spanishOnly: "The lesson texts are currently available in Spanish only. The check questions below, the quiz bank, the flashcards and the reference tables are in English.",
   },
 
   plan: [

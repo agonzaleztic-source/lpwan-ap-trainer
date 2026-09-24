@@ -18,10 +18,10 @@ examen de certificación que cubre el temario.
 
 **App publicada:** https://agonzaleztic-source.github.io/lpwan-ap-trainer/
 
-> **English:** the interface, the 201-question quiz bank, the 72 lesson checks, the flashcards
-> and the reference tables are available in English. Use the **ES / EN** switch in the
-> navigation bar; the choice is remembered on the device. The 24 lesson texts are in Spanish
-> for now. The exam itself is in English, so the mock exam can be taken in the exam's language.
+> **English:** the whole app is available in English: the interface, the 24 theory lessons, the
+> 201-question quiz bank, the 72 lesson checks, the flashcards and the reference tables. Use the
+> **ES / EN** switch in the navigation bar; the choice is remembered on the device. The exam
+> itself is in English, so the mock exam can be taken in the exam's language.
 
 ## Cómo entrena
 
@@ -37,9 +37,9 @@ examen de certificación que cubre el temario.
   todo el estado y otro lo restaura en cualquier dispositivo, validado con el mismo saneado
   que protege lo que vuelve de `localStorage`.
 - **Se estudia en español o en inglés.** El selector ES / EN de la barra de navegación cambia
-  la interfaz, el banco de tests, las comprobaciones, las tarjetas y las tablas de referencia.
-  El examen real es en inglés, así que el simulacro se puede hacer en el idioma del examen.
-  Las 24 lecciones de teoría siguen solo en español.
+  la interfaz, las 24 lecciones, el banco de tests, las comprobaciones, las tarjetas y las tablas
+  de referencia. El examen real es en inglés, así que el simulacro se puede hacer en el idioma
+  del examen. El inglés se descarga en un chunk aparte, solo si lo eliges.
 
 ## Instalarla en el móvil
 
@@ -82,7 +82,8 @@ SF12 = 1,155 s), el reparto uniforme de la respuesta correcta entre las cuatro
 posiciones al barajar, que ningún enunciado se repita en el banco, la
 progresión de cajas de Leitner y el saneado de lo que vuelve de
 `localStorage`. También que cada pregunta, comprobación, tarjeta y tabla tenga su
-traducción al inglés completa y con las cuatro opciones, y que las cadenas de interfaz
+traducción al inglés completa y con las cuatro opciones, y que cada cuerpo de lección tenga la
+misma estructura de bloques que el español, y que las cadenas de interfaz
 de los dos idiomas tengan las mismas claves. Se ejecutan, junto con la auditoría de
 dependencias, en cada push a `main` antes de publicar.
 
@@ -104,7 +105,8 @@ Sobre el modelo de amenaza, las medidas y sus límites: [SECURITY.md](SECURITY.m
 │   ├── i18n
 │   │   ├── strings.js          cadenas de la interfaz en español e inglés
 │   │   ├── lang.jsx            selector de idioma: detección, persistencia y contexto
-│   │   └── content.js          fusiona las traducciones sobre el contenido español
+│   │   ├── content.js          fusiona las traducciones sobre el contenido español
+│   │   └── en-pack.js          reúne el inglés; se importa de forma dinámica (chunk aparte)
 │   └── data
 │       ├── domains.js          los ocho dominios temáticos
 │       ├── lessons.js          las 24 lecciones de teoría
@@ -112,7 +114,7 @@ Sobre el modelo de amenaza, las medidas y sus límites: [SECURITY.md](SECURITY.m
 │       ├── cards.js            tarjetas de repaso
 │       ├── tables.js           tablas de referencia rápida
 │       └── en/                 traducción al inglés de preguntas, comprobaciones,
-│                               tarjetas, tablas y títulos de lección
+│                               tarjetas, tablas, títulos y cuerpo de lección
 ├── public
 │   ├── manifest.webmanifest    permite instalarla como app
 │   ├── fonts/                  tipografías autoalojadas, subconjunto latino
@@ -208,4 +210,4 @@ Haz un fork del repositorio, entra en **Settings → Pages** y elige **GitHub Ac
 
 ## Licencia
 
-MIT — ver [LICENSE](LICENSE).
+[PolyForm Noncommercial 1.0.0](LICENSE): el código y el contenido se pueden leer, usar para estudiar y modificar para uso no comercial; el uso comercial requiere permiso del autor. Las versiones publicadas antes de este cambio (hasta el commit `e2c23c2`) se distribuyeron bajo MIT y siguen siéndolo.

@@ -8,6 +8,7 @@ import { CHECKS_EN } from "./checks.en.js";
 import { CARDS_EN } from "./cards.en.js";
 import { TITLES_EN } from "./titles.en.js";
 import * as TABLES_EN from "./tables.en.js";
+import { LESSON_BODIES_EN } from "./lessons.en.js";
 
 /* El inglés se guarda aparte del español y se fusiona en tiempo de ejecución
    (src/i18n/content.js). Si a un elemento le falta traducción la app lo
@@ -61,6 +62,46 @@ describe("traducción al inglés de las comprobaciones de lección", () => {
 
   it("cada lección tiene título en inglés", () => {
     for (const l of LESSONS) expect(text(TITLES_EN[l.id]), `título de ${l.id}`).toBe(true);
+  });
+});
+
+describe("traducción al inglés del cuerpo de las lecciones", () => {
+  it("cada lección tiene cuerpo en inglés con la misma estructura de bloques que el español", () => {
+    for (const l of LESSONS) {
+      const en = LESSON_BODIES_EN[l.id];
+      expect(en, `falta el cuerpo de ${l.id}`).toBeDefined();
+      expect(en, `número de bloques de ${l.id}`).toHaveLength(l.body.length);
+      l.body.forEach((b, k) => {
+        const e = en[k];
+        const at = `${l.id}[${k}]`;
+        expect(e.t, `tipo de bloque en ${at}`).toBe(b.t);
+        expect(Object.keys(e).sort(), `claves en ${at}`).toEqual(Object.keys(b).sort());
+        if (Array.isArray(b.x)) {
+          expect(e.x, `elementos en ${at}`).toHaveLength(b.x.length);
+          expect(e.x.every(text), `elemento vacío en ${at}`).toBe(true);
+        } else if (b.t === "table") {
+          expect(e.head, `cabecera en ${at}`).toHaveLength(b.head.length);
+          expect(e.rows, `filas en ${at}`).toHaveLength(b.rows.length);
+          e.rows.forEach((r, i) => expect(r, `columnas en ${at} fila ${i}`).toHaveLength(b.rows[i].length));
+        } else {
+          expect(text(e.x), `texto vacío en ${at}`).toBe(true);
+        }
+        if (b.note !== undefined) expect(text(e.note), `nota vacía en ${at}`).toBe(true);
+      });
+    }
+  });
+
+  it("no hay cuerpos huérfanos de lecciones que ya no existen", () => {
+    const ids = new Set(LESSONS.map((l) => l.id));
+    for (const id of Object.keys(LESSON_BODIES_EN)) expect(ids.has(id), `id ${id} sobra`).toBe(true);
+  });
+
+  it("los cuerpos no conservan texto en español (signos de apertura y acentos)", () => {
+    // Heurística barata para pillar un párrafo que quedó sin traducir.
+    const flat = (v) => (typeof v === "string" ? [v] : Array.isArray(v) ? v.flatMap(flat) : v && typeof v === "object" ? Object.values(v).flatMap(flat) : []);
+    for (const [id, body] of Object.entries(LESSON_BODIES_EN)) {
+      for (const str of flat(body)) expect(/[¿¡ñ]|(el|los|las|del|que|una)/.test(str), `español en ${id}: ${str.slice(0, 60)}`).toBe(false);
+    }
   });
 });
 

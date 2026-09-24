@@ -79,11 +79,17 @@ function serviceWorker() {
         h.update(out.type === "chunk" ? out.code : Buffer.from(out.source));
       }
       const build = h.digest("hex").slice(0, 8);
+      /* Rutas relativas al service worker, que vive en la raíz de la base. */
+      const precache = Object.keys(bundle)
+        .filter((n) => /.(js|css)$/.test(n))
+        .map((n) => "./" + n);
       const src = readFileSync(new URL("./src/sw.js", import.meta.url), "utf8");
       this.emitFile({
         type: "asset",
         fileName: "sw.js",
-        source: src.replaceAll("__BUILD__", build),
+        source: src
+          .replaceAll("__BUILD__", build)
+          .replace("__PRECACHE__", JSON.stringify(precache)),
       });
     },
   };

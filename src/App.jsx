@@ -11,7 +11,7 @@ import {
 } from "./lib/store.js";
 import { LangProvider, useLang } from "./i18n/lang.jsx";
 import { LANGS } from "./i18n/strings.js";
-import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, tables } from "./i18n/content.js";
+import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, lessonBody, tables } from "./i18n/content.js";
 
 /* ============================================================
    PIEZAS REUTILIZABLES
@@ -139,13 +139,8 @@ function Theory({ studied, markStudied, record }) {
         </span>
         <h2 style={{ fontSize: 28, lineHeight: 1.2, margin: "10px 0 26px", maxWidth: "22ch" }}>{lessonTitle(lesson, lang)}</h2>
 
-        {t.theory.spanishOnly && (
-          <p className="lw-note" style={{ marginBottom: 22, maxWidth: "70ch" }}>{t.theory.spanishOnly}</p>
-        )}
-
-        {/* El cuerpo de las lecciones existe solo en español por ahora. */}
-        <div className="lw-read" lang="es">
-          {lesson.body.map((b, k) => <Block key={k} b={b} />)}
+        <div className="lw-read">
+          {lessonBody(lesson, lang).map((b, k) => <Block key={k} b={b} />)}
         </div>
 
         <div className="lw-check">
@@ -177,7 +172,6 @@ function Theory({ studied, markStudied, record }) {
     <div>
       <h2 className="lw-h2">{t.theory.h2}</h2>
       <p className="lw-lead">{t.theory.lead(Math.round(totalMins / 60))}</p>
-      {t.theory.spanishOnly && <p className="lw-note" style={{ marginBottom: 18, maxWidth: "70ch" }}>{t.theory.spanishOnly}</p>}
       <div className="lw-bar" style={{ marginBottom: 8 }}>
         <i style={{ width: `${(studied.length / LESSONS.length) * 100}%` }} />
       </div>

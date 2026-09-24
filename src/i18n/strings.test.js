@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { STRINGS, LANGS } from "./strings.js";
 import { detectLang } from "./lang.jsx";
-import { localizeQuestion, localizeCheck, localizeCard, lessonTitle } from "./content.js";
+import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, loadEnglish } from "./content.js";
 import { QUESTIONS } from "../data/questions.js";
 import { LESSONS } from "../data/lessons.js";
 import { CARDS } from "../data/cards.js";
@@ -67,6 +67,8 @@ describe("detección del idioma", () => {
 });
 
 describe("localización del contenido", () => {
+  beforeAll(() => loadEnglish());
+
   it("en español devuelve el original intacto", () => {
     const q = QUESTIONS[0];
     expect(localizeQuestion(q, "es")).toBe(q);

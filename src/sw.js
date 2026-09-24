@@ -7,7 +7,21 @@
    siempre, despliegue tras despliegue. */
 const CACHE = "lorawan-ap-__BUILD__";
 
-self.addEventListener("install", () => self.skipWaiting());
+/* Lista de ficheros de esta compilación, la rellena vite.config.js. Incluye
+   los chunks que se cargan bajo demanda (el inglés): sin precacharlos, quien
+   instalase la app en español y luego perdiese la conexión no podría cambiar
+   de idioma. Si algo falla al precachear no se aborta la instalación. */
+const PRECACHE = __PRECACHE__;
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(PRECACHE))
+      .catch(() => {})
+      .then(() => self.skipWaiting())
+  );
+});
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
