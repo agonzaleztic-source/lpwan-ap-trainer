@@ -9,6 +9,7 @@ import {
   emptyState, loadState, saveState, clearState, exportState, importState,
   scheduleCard, deckStatus, cardState, humanDelay, recordAnswer, BOXES,
 } from "./lib/store.js";
+import { quizKeyAction } from "./lib/keys.js";
 import { summarize, scoreBand, BAND_COLOR, PASS_MARK } from "./lib/result.js";
 import { LangProvider, useLang } from "./i18n/lang.jsx";
 import { LANGS } from "./i18n/strings.js";
@@ -562,6 +563,29 @@ function Quiz({ record, failed, onAnswer, onRun }) {
     if (i + 1 >= set.length) setPhase("done"); else setI(i + 1);
   };
 
+  /* Atajos de teclado durante el test (lógica en lib/keys.js): 1-4 o A-D
+     responden y Enter pasa a la siguiente. El manejador se registra una vez
+     y lee el estado del momento a través de la referencia. */
+  const keyHandler = useRef(null);
+  useEffect(() => {
+    keyHandler.current = (e) => {
+      if (phase !== "run" || !set[i]) return;
+      const action = quizKeyAction(e, { nOpts: set[i].opts.length, answered: pick !== null });
+      if (!action) return;
+      e.preventDefault();
+      if (action.type === "pick") answer(action.idx); else advance();
+    };
+  });
+  useEffect(() => {
+    const onKey = (e) => keyHandler.current?.(e);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /* Tras responder, el foco pasa a «Siguiente»: con teclado basta Enter. */
+  const nextBtn = useRef(null);
+  useEffect(() => { if (pick !== null) nextBtn.current?.focus(); }, [pick]);
+
   if (phase === "setup") {
     const avail = QUESTIONS.filter((q) => doms.includes(q.dom)).length;
     const nFails = QUESTIONS.filter((q) => failed[q.id]).length;
@@ -630,11 +654,16 @@ function Quiz({ record, failed, onAnswer, onRun }) {
           if (done && !mock) { if (k === q.a) cls += " good"; else if (k === pick) cls += " bad"; }
           else if (done && mock && k === pick) cls += " good";
           return (
-            <button key={k} className={cls} disabled={done} onClick={() => answer(k)}>
+            <button key={k} className={cls} disabled={done} onClick={() => answer(k)}
+              aria-keyshortcuts={`${k + 1} ${"ABCD"[k]}`}>
               <span className="k">{"ABCD"[k]}</span><span>{o}</span>
             </button>
           );
         })}
+        <p className="lw-note lw-keys" style={{ marginTop: 6 }}>{t.quiz.keysHint}</p>
+        <p className="sr-only" aria-live="polite">
+          {done ? (mock ? t.quiz.srPicked("ABCD"[pick]) : `${pick === q.a ? t.quiz.correct : t.quiz.incorrect}${t.quiz.srCorrectIs("ABCD"[q.a])}`) : ""}
+        </p>
         {done && !mock && (
           <div style={{ marginTop: 14 }}>
             <div className="lw-exp">
@@ -648,7 +677,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
         )}
         {done && (
           <div style={{ marginTop: 18 }}>
-            <button className="lw-btn primary" onClick={advance}>
+            <button ref={nextBtn} className="lw-btn primary" onClick={advance} aria-keyshortcuts="Enter">
               {i + 1 >= set.length ? t.quiz.seeResult : t.quiz.next}
             </button>
           </div>
