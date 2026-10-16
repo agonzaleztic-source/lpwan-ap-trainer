@@ -173,6 +173,7 @@ export const CSS = `
 .lw-dom-table thead th { color:var(--muted); font-size:12px; font-weight:500; }
 .lw-dom-table tr:last-child > * { border-bottom:0; }
 .lw-dom-table td + td { padding-left:16px; }
+@media (hover:none) and (pointer:coarse) { .lw-keys { display:none; } }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
 /* ---- lecciones ---- */
