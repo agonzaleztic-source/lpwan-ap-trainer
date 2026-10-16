@@ -45,14 +45,23 @@ describe("integridad del banco de preguntas", () => {
   });
 
   // `ref` es opcional a propósito: solo se rellena cuando el contenido está
-  // respaldado por una sección verificada de TS001, RP002 o TS002. Este test
-  // no valida que la cita sea correcta (eso se comprobó a mano contra los PDF
-  // oficiales), solo que nadie cuele un formato o una fuente distinta sin querer.
-  it("la referencia a la especificación, cuando existe, cita un documento reconocido", () => {
+  // respaldado por una sección verificada de una fuente pública: las
+  // especificaciones de la LoRa Alliance (TS001, RP002, TS002, TS011 y los
+  // paquetes FUOTA TS003-TS006), la página del programa LoRaWAN Certified o
+  // la documentación de Semtech (datasheet del SX1276 y la nota AN1200.86).
+  // Este test no valida que la cita sea correcta (eso se comprobó a mano
+  // contra los PDF), solo que nadie cuele un formato o una fuente distinta.
+  const REF_OK = [
+    /^(TS001-1\.1|TS001|RP002|TS002|TS011)(\s§.+)?$/,
+    /^TS003 \+ TS004 \+ TS005 \+ TS006$/,
+    /^Semtech (SX1276|AN1200\.86) §.+$/,
+    /^LoRa Alliance · LoRaWAN Certified$/,
+  ];
+  it("la referencia, cuando existe, cita un documento reconocido", () => {
     const conRef = all.filter((q) => q.ref);
     expect(conRef.length).toBeGreaterThan(0);
     for (const q of conRef) {
-      expect(q.ref).toMatch(/^(TS001-1\.1|TS001|RP002|TS002)(\s§.+)?$/);
+      expect(REF_OK.some((re) => re.test(q.ref)), `ref de ${q.id ?? q.lesson}: ${q.ref}`).toBe(true);
     }
   });
 });
