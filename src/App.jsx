@@ -9,6 +9,7 @@ import {
   emptyState, loadState, saveState, clearState, exportState, importState,
   scheduleCard, deckStatus, cardState, humanDelay, recordAnswer, BOXES,
 } from "./lib/store.js";
+import { summarize, scoreBand, BAND_COLOR, PASS_MARK } from "./lib/result.js";
 import { LangProvider, useLang } from "./i18n/lang.jsx";
 import { LANGS } from "./i18n/strings.js";
 import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, lessonBody, fetchLessonBody, loadLessonBodies, tables } from "./i18n/content.js";
@@ -511,10 +512,10 @@ function Quiz({ record, failed, onAnswer, onRun }) {
      sostenido" necesita historial, no la nota del último test. */
   useEffect(() => {
     if (phase !== "done" || saved || !log.length) return;
-    const hits = log.filter((l) => l.idx === l.q.a).length;
+    const r = summarize(log, mock ? set.slice(log.length) : []);
     setSaved(true);
-    onRun({ score: Math.round((hits / log.length) * 100), n: log.length, mock });
-  }, [phase, saved, log, mock, onRun]);
+    onRun({ score: r.score, n: r.n, mock });
+  }, [phase, saved, log, mock, set, onRun]);
 
   const toggle = (id) =>
     setDoms((d) => (d.includes(id) ? (d.length > 1 ? d.filter((x) => x !== id) : d) : [...d, id]));
@@ -656,20 +657,50 @@ function Quiz({ record, failed, onAnswer, onRun }) {
     );
   }
 
-  const hits = log.filter((l) => l.idx === l.q.a).length;
-  const score = log.length ? Math.round((hits / log.length) * 100) : 0;
+  /* En el simulacro, lo que se queda sin responder al acabarse el tiempo
+     cuenta como fallo, igual que en el examen real. */
+  const res = summarize(log, mock ? set.slice(log.length) : []);
   const fails = log.filter((l) => l.idx !== l.q.a);
+  const feedback = { pass: t.quiz.feedbackHigh, near: t.quiz.feedbackMid, low: t.quiz.feedbackLow }[res.band];
   return (
     <div>
       <h2 className="lw-h2">{t.quiz.result}</h2>
       <div className="lw-card" style={{ marginBottom: 18 }}>
-        <div className="lw-out" style={{ fontSize: 44, color: score >= 85 ? "var(--green)" : score >= 70 ? "var(--amber)" : "var(--red)" }}>
-          {t.pct(score)}<small>{t.quiz.hits(hits, log.length)}</small>
+        <div className="lw-out" style={{ fontSize: 44, color: BAND_COLOR[res.band] }}>
+          {t.pct(res.score)}<small>{t.quiz.hits(res.hits, res.answered)}</small>
         </div>
+        {res.unanswered > 0 && (
+          <p className="lw-note" style={{ marginTop: 8 }}>{t.quiz.unanswered(res.unanswered)}</p>
+        )}
+        {mock && res.n > 0 && (
+          <p style={{ marginTop: 14, fontSize: 15, fontWeight: 600, color: res.passed ? "var(--green)" : "var(--red)" }}>
+            {res.passed ? t.quiz.verdictPass(PASS_MARK) : t.quiz.verdictFail(PASS_MARK)}
+          </p>
+        )}
         <p style={{ marginTop: 16, fontSize: 14, maxWidth: "62ch", color: "var(--muted)" }}>
-          {score >= 85 ? t.quiz.feedbackHigh : score >= 70 ? t.quiz.feedbackMid : t.quiz.feedbackLow}
+          {feedback}
         </p>
       </div>
+      {res.byDomain.length > 0 && (
+        <div className="lw-card" style={{ marginBottom: 18 }}>
+          <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.quiz.byDomain}</h3>
+          <table className="lw-dom-table">
+            <caption className="sr-only">{t.quiz.byDomainCaption}</caption>
+            <thead>
+              <tr><th scope="col">{t.quiz.domainCol}</th><th scope="col">{t.quiz.hitsCol}</th><th scope="col">%</th></tr>
+            </thead>
+            <tbody>
+              {res.byDomain.map((d) => (
+                <tr key={d.dom}>
+                  <th scope="row" style={{ color: DOM_COLOR[d.dom] }}>{t.dom[d.dom]}</th>
+                  <td className="mono">{d.hits}/{d.n}</td>
+                  <td className="mono" style={{ color: BAND_COLOR[scoreBand(d.pct)] }}>{t.pct(d.pct)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {fails.length > 0 && (
         <>
           <h3 style={{ fontSize: 16, marginBottom: 12 }}>{t.quiz.failsTitle}</h3>
