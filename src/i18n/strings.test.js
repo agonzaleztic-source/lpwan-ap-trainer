@@ -45,6 +45,9 @@ describe("cadenas de interfaz", () => {
       expect(t.cards.status(2, 5, 9)).toContain("9");
       expect(t.tools.phyNote(25, 12, 33)).toContain("25");
       expect(t.pct(85)).toMatch(/^85 ?%$/);
+      expect(t.quiz.verdictPass(80)).toMatch(/80 ?%/);
+      expect(t.quiz.verdictFail(80)).toMatch(/80 ?%/);
+      expect(t.quiz.unanswered(7)).toContain("7");
     }
   });
 });

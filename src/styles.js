@@ -167,6 +167,13 @@ export const CSS = `
   border-bottom:1px solid rgba(35,57,79,.5); font-size:13.5px; }
 .lw-kv:last-child { border-bottom:0; }
 .lw-kv b { font-family:'IBM Plex Mono',monospace; font-weight:500; }
+.lw-dom-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+.lw-dom-table th, .lw-dom-table td { padding:7px 0; border-bottom:1px solid rgba(35,57,79,.5); text-align:right; }
+.lw-dom-table th[scope=row], .lw-dom-table thead th:first-child { text-align:left; font-weight:500; }
+.lw-dom-table thead th { color:var(--muted); font-size:12px; font-weight:500; }
+.lw-dom-table tr:last-child > * { border-bottom:0; }
+.lw-dom-table td + td { padding-left:16px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
 /* ---- lecciones ---- */
 .lw-lesson-row { display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit;
