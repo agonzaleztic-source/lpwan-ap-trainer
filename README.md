@@ -169,8 +169,10 @@ En `src/data/questions.js`. El campo `a` es el índice de la opción correcta em
 ```
 
 Los `dom` válidos son: `phy`, `arq`, `cls`, `sec`, `mac`, `cmd`, `reg`, `ops`. El campo `ref`
-es opcional: solo añádelo si has comprobado la sección contra el PDF oficial de TS001, RP002
-o TS002; si no, mejor dejarlo sin poner que citar de memoria.
+es opcional: solo añádelo si has comprobado la sección contra el PDF oficial de TS001, RP002,
+TS002, TS011 o los paquetes FUOTA (TS003-TS006), o contra la documentación pública de Semtech
+(datasheet del SX1276, nota AN1200.86); si no, mejor dejarlo sin poner que citar de memoria.
+Los formatos admitidos están en `src/data/questions.test.js`.
 
 Añade después su traducción en `src/data/en/questions.en.js`, con el mismo `id` y las opciones
 en el mismo orden (sin `a`, `dom` ni `ref`):
