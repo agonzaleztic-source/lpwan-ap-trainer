@@ -171,6 +171,10 @@ const es = {
     yourAnswer: "Tu respuesta",
     correctAnswer: "Correcta",
     again: "Otro test",
+    print: "Imprimir informe",
+    kindMock: "Simulacro",
+    kindQuiz: "Test",
+    reportHead: (kind, date) => `LPWAN AP Trainer · ${kind} · ${date}`,
   },
 
   tools: {
@@ -387,6 +391,10 @@ const en = {
     yourAnswer: "Your answer",
     correctAnswer: "Correct",
     again: "Another quiz",
+    print: "Print report",
+    kindMock: "Mock exam",
+    kindQuiz: "Quiz",
+    reportHead: (kind, date) => `LPWAN AP Trainer · ${kind} · ${date}`,
   },
 
   tools: {

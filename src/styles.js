@@ -205,4 +205,21 @@ export const CSS = `
 .lw-fx-n { font-size:13px; color:var(--muted); margin:0 0 20px; line-height:1.55; }
 
 .lw-check { border-top:1px solid var(--line); margin-top:34px; padding-top:26px; }
+
+/* Informe imprimible: solo el contenido, en claro y sin la interfaz. */
+.lw-print-only { display:none; }
+@media print {
+  .lw {
+    --bg:#fff; --panel:#fff; --panel2:#fff; --line:#bbb;
+    --ink:#000; --muted:#444; --amber:#8a5300; --green:#1b6e3a; --red:#b3261e;
+    --cyan:#00695c; --violet:#4a3aa8;
+    font-size:11pt; min-height:0;
+  }
+  .lw-hero, .lw-nav, .lw-footer, .lw-no-print, .lw-keys { display:none !important; }
+  .lw-print-only { display:block; margin-bottom:6px; }
+  .lw-card { break-inside:avoid; border-color:#bbb; }
+  .lw-dom-table tr { break-inside:avoid; }
+  html, body, #root { background:#fff !important; }
+  @page { margin:16mm; }
+}
 `;

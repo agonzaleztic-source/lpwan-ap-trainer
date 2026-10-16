@@ -704,6 +704,9 @@ function Quiz({ record, failed, onAnswer, onRun }) {
   const feedback = { pass: t.quiz.feedbackHigh, near: t.quiz.feedbackMid, low: t.quiz.feedbackLow }[res.band];
   return (
     <div>
+      <p className="lw-print-only lw-note">
+        {t.quiz.reportHead(mock ? t.quiz.kindMock : t.quiz.kindQuiz, new Date().toLocaleDateString(t.locale))}
+      </p>
       <h2 className="lw-h2">{t.quiz.result}</h2>
       <div className="lw-card" style={{ marginBottom: 18 }}>
         <div className="lw-out" style={{ fontSize: 44, color: BAND_COLOR[res.band] }}>
@@ -758,7 +761,10 @@ function Quiz({ record, failed, onAnswer, onRun }) {
           </div>
         </>
       )}
-      <button className="lw-btn primary" onClick={() => setPhase("setup")}>{t.quiz.again}</button>
+      <div className="lw-no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button className="lw-btn primary" onClick={() => setPhase("setup")}>{t.quiz.again}</button>
+        <button className="lw-btn" onClick={() => window.print()}>{t.quiz.print}</button>
+      </div>
     </div>
   );
 }
