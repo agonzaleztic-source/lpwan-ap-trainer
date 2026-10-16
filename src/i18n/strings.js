@@ -54,6 +54,8 @@ const es = {
     h2: "Teoría",
     lead: (hours) => `Veinticuatro lecciones que cubren la materia del examen desde cero, con las ideas clave, las trampas habituales y tres preguntas de comprobación al final de cada una. Unas ${hours} horas de lectura en total.`,
     progress: (done, total) => `${done} de ${total} lecciones estudiadas`,
+    loading: "Cargando la lección…",
+    loadError: "No se ha podido cargar la lección. Comprueba la conexión y vuelve a abrirla.",
   },
 
   plan: [
@@ -258,6 +260,8 @@ const en = {
     h2: "Theory",
     lead: (hours) => `Twenty-four lessons covering the exam syllabus from scratch, with the key ideas, the usual traps and three check questions at the end of each one. About ${hours} hours of reading in total.`,
     progress: (done, total) => `${done} of ${total} lessons studied`,
+    loading: "Loading the lesson…",
+    loadError: "The lesson could not be loaded. Check your connection and open it again.",
   },
 
   plan: [

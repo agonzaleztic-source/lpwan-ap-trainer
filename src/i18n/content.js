@@ -62,10 +62,49 @@ export function lessonTitle(lesson, lang) {
   return EN.TITLES_EN[lesson.id] || lesson.title;
 }
 
-/* Cuerpo de la lección: bloques de texto. Misma estructura en ambos idiomas. */
-export function lessonBody(lesson, lang) {
-  if (es(lang)) return lesson.body;
-  return EN.LESSON_BODIES_EN[lesson.id] || lesson.body;
+/* Cuerpo de las lecciones: bloques de texto, misma estructura en ambos
+   idiomas. Es lo que más pesa del temario y solo hace falta al abrir una
+   lección, así que cada idioma viaja en su propio chunk y se pide la primera
+   vez que se abre una. El service worker precachea todos los chunks, de modo
+   que sin conexión también se cargan. */
+const BODY_LOADERS = {
+  es: () => import("../data/lesson-bodies.js").then((m) => m.LESSON_BODIES),
+  en: () => import("../data/en/lessons.en.js").then((m) => m.LESSON_BODIES_EN),
+};
+const BODIES = {};
+const bodiesPending = {};
+
+export function loadLessonBodies(lang) {
+  const l = lang === "en" ? "en" : "es";
+  if (BODIES[l]) return Promise.resolve(BODIES[l]);
+  bodiesPending[l] ||= BODY_LOADERS[l]()
+    .then((m) => (BODIES[l] = m))
+    .catch((e) => { bodiesPending[l] = null; throw e; });
+  return bodiesPending[l];
+}
+
+/* Cuerpo ya cargado de una lección, o null si su chunk aún no ha llegado.
+   En inglés cae al español si falta la traducción (el test de traducciones
+   impide que eso ocurra en lo publicado). */
+export function lessonBody(id, lang) {
+  if (lang === "en") {
+    if (!BODIES.en) return null;
+    if (BODIES.en[id]) return BODIES.en[id];
+  }
+  return BODIES.es?.[id] || null;
+}
+
+/* Carga el cuerpo de una lección: primero el del idioma pedido y, si no
+   está o su chunk no llega, el español. */
+export async function fetchLessonBody(id, lang) {
+  if (lang === "en") {
+    try {
+      const en = await loadLessonBodies("en");
+      if (en[id]) return en[id];
+    } catch { /* sin red: se intenta el español */ }
+  }
+  const es = await loadLessonBodies("es");
+  return es[id] || null;
 }
 
 export function tables(lang) {
