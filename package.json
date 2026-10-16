@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Entrenador para el examen LoRaWAN Accredited Professional",
+  "description": "LPWAN AP Trainer: entrenador para el examen LoRaWAN Accredited Professional (proyecto independiente, no afiliado a la LoRa Alliance)",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "vite",
