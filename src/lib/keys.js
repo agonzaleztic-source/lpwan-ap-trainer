@@ -30,8 +30,6 @@ export function quizKeyAction(e, { nOpts, answered }) {
   }
 
   if (answered || key.length !== 1) return null;
-  let idx = -1;
-  if (key >= "1" && key <= "9") idx = Number(key) - 1;
-  else idx = LETTERS.indexOf(key.toLowerCase());
+  const idx = key >= "1" && key <= "9" ? Number(key) - 1 : LETTERS.indexOf(key.toLowerCase());
   return idx >= 0 && idx < nOpts && idx < LETTERS.length ? { type: "pick", idx } : null;
 }

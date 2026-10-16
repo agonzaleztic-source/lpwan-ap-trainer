@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { CSS } from "./styles.js";
 import { DOMAINS, DOM_COLOR } from "./data/domains.js";
 import { QUESTIONS } from "./data/questions.js";
@@ -257,6 +257,9 @@ function Dashboard({ stats, studied, cards, failed, runs, persists, onReset, onE
   const pct = total ? Math.round((right / total) * 100) : 0;
   const nFails = QUESTIONS.filter((q) => failed[q.id]).length;
   const mastered = CARDS.filter((c) => cardState(cards, c.f).box >= 4).length;
+  /* Leer el reloj al pintar es intencionado: «pendientes hoy» es lo que vence
+     en el momento de mirar el panel. */
+  // eslint-disable-next-line react-hooks/purity
   const dueToday = CARDS.filter((c) => cardState(cards, c.f).due <= Date.now()).length;
   /* "Sostenido" significa varios intentos seguidos por encima del listón,
      no una buena nota suelta. Se miran los tres últimos. */
@@ -413,6 +416,7 @@ function Flashcards({ cards, onGrade }) {
      de `cards`: si se rehiciera en cada respuesta, la tarjeta recién graduada
      desaparecería a media sesión. */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la cola se rehace al cambiar de filtro, ver arriba
     setQueue((extra ? deck : deckStatus(cards, deck).due).map((c) => c.f));
     setFlip(false);
   }, [dom, extra]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -472,6 +476,8 @@ function Flashcards({ cards, onGrade }) {
           <h3 style={{ fontSize: 18, marginBottom: 10 }}>{t.cards.upToDate}</h3>
           <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: "60ch", marginBottom: 16 }}>
             {t.cards.nonePending}
+            {/* Cuánto falta, contado desde el momento de pintar. */}
+            {/* eslint-disable-next-line react-hooks/purity */}
             {status.nextDue ? t.cards.nextBack(humanDelay(status.nextDue - Date.now(), lang)) : ""}.
             {t.cards.mastered(status.mastered, deck.length)}
           </p>
@@ -502,10 +508,14 @@ function Quiz({ record, failed, onAnswer, onRun }) {
   const [left, setLeft] = useState(0);
   const [saved, setSaved] = useState(false);
 
+  /* Reloj del simulacro: cada segundo descuenta uno y, al llegar a cero,
+     se acaba el intento. */
   useEffect(() => {
     if (phase !== "run" || !mock) return;
-    if (left <= 0) { setPhase("done"); return; }
-    const t = setTimeout(() => setLeft((s) => s - 1), 1000);
+    const t = setTimeout(() => {
+      setLeft((s) => s - 1);
+      if (left <= 1) setPhase("done");
+    }, 1000);
     return () => clearTimeout(t);
   }, [phase, left, mock]);
 
@@ -514,6 +524,7 @@ function Quiz({ record, failed, onAnswer, onRun }) {
   useEffect(() => {
     if (phase !== "done" || saved || !log.length) return;
     const r = summarize(log, mock ? set.slice(log.length) : []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- marca de «ya archivado», evita archivarlo dos veces
     setSaved(true);
     onRun({ score: r.score, n: r.n, mock });
   }, [phase, saved, log, mock, set, onRun]);
@@ -920,6 +931,9 @@ function Shell() {
   const [state, setState] = useState(() => loadState(DOM_IDS));
   const [persists, setPersists] = useState(true);
 
+  /* Guardar es sincronizar con un sistema externo (localStorage); el
+     resultado dice si se pudo y se refleja en el panel. */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPersists(saveState(state)); }, [state]);
 
   const { stats, studied, cards, failed, runs } = state;

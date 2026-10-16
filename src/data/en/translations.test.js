@@ -101,7 +101,7 @@ describe("traducción al inglés del cuerpo de las lecciones", () => {
     // Heurística barata para pillar un párrafo que quedó sin traducir.
     const flat = (v) => (typeof v === "string" ? [v] : Array.isArray(v) ? v.flatMap(flat) : v && typeof v === "object" ? Object.values(v).flatMap(flat) : []);
     for (const [id, body] of Object.entries(LESSON_BODIES_EN)) {
-      for (const str of flat(body)) expect(/[¿¡ñ]|(el|los|las|del|que|una)/.test(str), `español en ${id}: ${str.slice(0, 60)}`).toBe(false);
+      for (const str of flat(body)) expect(/[¿¡ñ]|\b(el|los|las|del|que|una)\b/.test(str), `español en ${id}: ${str.slice(0, 60)}`).toBe(false);
     }
   });
 });
