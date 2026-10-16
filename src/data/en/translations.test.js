@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { QUESTIONS } from "../questions.js";
 import { LESSONS } from "../lessons.js";
+import { LESSON_BODIES } from "../lesson-bodies.js";
 import { CARDS } from "../cards.js";
 import * as TABLES_ES from "../tables.js";
 import { QUESTIONS_EN } from "./questions.en.js";
@@ -70,8 +71,8 @@ describe("traducción al inglés del cuerpo de las lecciones", () => {
     for (const l of LESSONS) {
       const en = LESSON_BODIES_EN[l.id];
       expect(en, `falta el cuerpo de ${l.id}`).toBeDefined();
-      expect(en, `número de bloques de ${l.id}`).toHaveLength(l.body.length);
-      l.body.forEach((b, k) => {
+      expect(en, `número de bloques de ${l.id}`).toHaveLength(LESSON_BODIES[l.id].length);
+      LESSON_BODIES[l.id].forEach((b, k) => {
         const e = en[k];
         const at = `${l.id}[${k}]`;
         expect(e.t, `tipo de bloque en ${at}`).toBe(b.t);

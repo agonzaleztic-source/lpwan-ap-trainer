@@ -11,7 +11,7 @@ import {
 } from "./lib/store.js";
 import { LangProvider, useLang } from "./i18n/lang.jsx";
 import { LANGS } from "./i18n/strings.js";
-import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, lessonBody, tables } from "./i18n/content.js";
+import { localizeQuestion, localizeCheck, localizeCard, lessonTitle, lessonBody, fetchLessonBody, loadLessonBodies, tables } from "./i18n/content.js";
 
 /* ============================================================
    PIEZAS REUTILIZABLES
@@ -118,12 +118,39 @@ function Check({ c, i, onAnswer }) {
 /* ============================================================
    TEORÍA
    ============================================================ */
+
+/* Cuerpo de la lección abierta. Viaja en un chunk aparte (ver content.js):
+   si ya está cargado se devuelve al momento y si no se pide y, mientras
+   llega, la vista enseña un aviso de carga. */
+function useLessonBody(id, lang) {
+  const ready = id ? lessonBody(id, lang) : null;
+  const key = `${lang}:${id}`;
+  const [got, setGot] = useState(null);
+  useEffect(() => {
+    if (!id || ready) return;
+    let live = true;
+    fetchLessonBody(id, lang).then(
+      (body) => { if (live) setGot({ key, body, error: !body }); },
+      () => { if (live) setGot({ key, body: null, error: true }); },
+    );
+    return () => { live = false; };
+  }, [id, lang, key, ready]);
+  if (ready) return { body: ready, error: false };
+  if (got?.key === key) return got;
+  return { body: null, error: false };
+}
+
 function Theory({ studied, markStudied, record }) {
   const { lang, t } = useLang();
   const [openId, setOpenId] = useState(null);
   const lesson = LESSONS.find((l) => l.id === openId);
+  const { body, error } = useLessonBody(lesson?.id, lang);
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [openId]);
+
+  /* Al entrar en Teoría se adelanta la descarga de los cuerpos, para que
+     abrir una lección sea inmediato. Si falla, se reintenta al abrirla. */
+  useEffect(() => { loadLessonBodies(lang).catch(() => {}); }, [lang]);
 
   if (lesson) {
     const idx = LESSONS.indexOf(lesson);
@@ -140,7 +167,11 @@ function Theory({ studied, markStudied, record }) {
         <h2 style={{ fontSize: 28, lineHeight: 1.2, margin: "10px 0 26px", maxWidth: "22ch" }}>{lessonTitle(lesson, lang)}</h2>
 
         <div className="lw-read">
-          {lessonBody(lesson, lang).map((b, k) => <Block key={k} b={b} />)}
+          {body
+            ? body.map((b, k) => <Block key={k} b={b} />)
+            : error
+              ? <p role="alert">{t.theory.loadError}</p>
+              : <p role="status" style={{ color: "var(--muted)" }}>{t.theory.loading}</p>}
         </div>
 
         <div className="lw-check">
